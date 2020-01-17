@@ -1,0 +1,65 @@
+DJLNightlyArtifacts:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      AnalyticsConfigurations:
+        - AnalyticsConfiguration
+      BucketName: djl-nightly-artifacts
+      ObjectLockEnabled: Boolean
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+DJLNightlyLogs:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      AnalyticsConfigurations:
+        - AnalyticsConfiguration
+      BucketName: djl-nightly-logs
+      ObjectLockEnabled: Boolean
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+DJLNightLinuxCPUProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: djl-nightly-linux-cpu-build
+      Description: CodeBuild Project to build DJL nightly CPU build in linux environment
+      Artifacts:
+        Type: S3
+        Location:
+          Ref: DJLNightlyArtifacts
+        NamespaceType: NONE
+        Path: linux/cpu
+        Name: djl-linux-cpu-reports
+        OverrideArtifactName: true
+        Packaging: ZIP
+      BadgeEnabled: true
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/standard:3.0
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+        S3Logs:
+          Status: ENABLED
+          Location:
+            !Sub
+              - ${bucket-name}
+              - {bucket-name: !GetAtt DJLNightlyLogs.Properties.BucketName}
+      Source:
+        BuildSpec: tools/ci/buildspecs/linux-cpu-buildspec.yml
+        Auth:
+          Type: OAUTH
+        Location: https://github.com/keerthanvasist/djl.git
+        Type: GITHUB
+      SourceVersion: cfn
+      QueuedTimeoutInMinutes: 120
+      TimeoutInMinutes: 15
