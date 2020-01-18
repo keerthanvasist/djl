@@ -1,11 +1,159 @@
+CodeBuildRole:
+    Description: Creating service role in IAM for AWS CodeBuild
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+      Path: /
+      RoleName: !Join
+        - '-'
+        - - !Ref 'AWS::StackName'
+          - CodeBuild
+    Type: AWS::IAM::Role
+
+CodePipelineTrustRole:
+    Description: Creating service role in IAM for AWS CodePipeline
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - codepipeline.amazonaws.com
+          Sid: 1
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - s3:GetObject
+            - s3:GetObjectVersion
+            - s3:GetBucketVersioning
+            - s3:PutObject
+            Effect: Allow
+            Resource:
+            - !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref 'ArtifactsBucket'
+            - !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref 'ArtifactsBucket'
+                - /*
+          - Action:
+            - codecommit:CancelUploadArchive
+            - codecommit:GetBranch
+            - codecommit:GetCommit
+            - codecommit:GetUploadArchiveStatus
+            - codecommit:UploadArchive
+            Effect: Allow
+            Resource:
+            - !Join
+              - ':'
+              - - arn
+                - aws
+                - codecommit
+                - !Ref 'AWS::Region'
+                - !Ref 'AWS::AccountId'
+                - !Ref CodeCommitRepoName
+          - Action:
+            - codebuild:StartBuild
+            - codebuild:BatchGetBuilds
+            - codebuild:StopBuild
+            Effect: Allow
+            Resource:
+            - !GetAtt 'CodeBuildProject.Arn'
+          - Action:
+            - codedeploy:CreateDeployment
+            - codedeploy:GetApplicationRevision
+            - codedeploy:GetDeployment
+            - codedeploy:GetDeploymentConfig
+            - codedeploy:RegisterApplicationRevision
+            Effect: Allow
+            Resource:
+            - !Join
+              - ':'
+              - - arn
+                - aws
+                - codedeploy
+                - !Ref 'AWS::Region'
+                - !Ref 'AWS::AccountId'
+                - deploymentgroup
+                - !Join
+                  - ''
+                  - - !Ref 'AWS::StackName'
+                    - '*'
+            - !Join
+              - ':'
+              - - arn
+                - aws
+                - codedeploy
+                - !Ref 'AWS::Region'
+                - !Ref 'AWS::AccountId'
+                - application
+                - !Join
+                  - ''
+                  - - !Ref 'AWS::StackName'
+                    - '*'
+            - !Join
+              - ':'
+              - - arn
+                - aws
+                - codedeploy
+                - !Ref 'AWS::Region'
+                - !Ref 'AWS::AccountId'
+                - deploymentconfig
+                - '*'
+          - Action:
+            - cloudformation:DescribeStacks
+            - cloudformation:DescribeChangeSet
+            - cloudformation:CreateChangeSet
+            - cloudformation:DeleteChangeSet
+            - cloudformation:ExecuteChangeSet
+            Effect: Allow
+            Resource:
+            - !Join
+              - ':'
+              - - arn
+                - aws
+                - cloudformation
+                - !Ref 'AWS::Region'
+                - !Ref 'AWS::AccountId'
+                - !Join
+                  - /
+                  - - stack
+                    - !Join
+                      - '-'
+                      -  - !Ref 'AWS::StackName'
+                         - '*'
+          - Action:
+            - iam:PassRole
+            Effect: Allow
+            Resource:
+            - !GetAtt
+              - CloudFormationTrustRole
+              - Arn
+        PolicyName: !Join
+          - '-'
+          - - !Ref 'AWS::StackName'
+            - CodePipelineRolePolicy
+      RoleName: !Join
+        - '-'
+        - - !Ref 'AWS::StackName'
+          - CodePipeline
+    Type: AWS::IAM::Role
+
+
 DJLNightlyArtifacts:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private
-      AnalyticsConfigurations:
-        - AnalyticsConfiguration
       BucketName: djl-nightly-artifacts
-      ObjectLockEnabled: Boolean
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -16,10 +164,7 @@ DJLNightlyLogs:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private
-      AnalyticsConfigurations:
-        - AnalyticsConfiguration
       BucketName: djl-nightly-logs
-      ObjectLockEnabled: Boolean
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -52,8 +197,8 @@ DJLNightLinuxCPUProject:
           Status: ENABLED
           Location:
             !Sub
-              - ${bucket-name}
-              - {bucket-name: !GetAtt DJLNightlyLogs.Properties.BucketName}
+              - ${bucketName}/linux/cpu
+              - {bucketName: !Ref DJLNightlyLogs}
       Source:
         BuildSpec: tools/ci/buildspecs/linux-cpu-buildspec.yml
         Auth:
@@ -63,3 +208,80 @@ DJLNightLinuxCPUProject:
       SourceVersion: cfn
       QueuedTimeoutInMinutes: 120
       TimeoutInMinutes: 15
+
+DJLNightWindowsCPUProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: djl-nightly-windows-cpu-build
+      Description: CodeBuild Project to build DJL nightly CPU build in windows environment
+      Artifacts:
+        Type: S3
+        Location:
+          Ref: DJLNightlyArtifacts
+        NamespaceType: NONE
+        Path: windows/cpu
+        Name: djl-windows-cpu-reports
+        OverrideArtifactName: true
+        Packaging: ZIP
+      BadgeEnabled: true
+      Environment:
+        Type: WINDOWS_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: deepjavalibrary/windows-jdk8:servercore2016
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+        S3Logs:
+          Status: ENABLED
+          Location:
+            !Sub
+              - ${bucketName}/windows/cpu
+              - {bucketName: !Ref DJLNightlyLogs}
+      Source:
+        BuildSpec: tools/ci/buildspecs/windows-cpu-buildspec.yml
+        Auth:
+          Type: OAUTH
+        Location: https://github.com/keerthanvasist/djl.git
+        Type: GITHUB
+      SourceVersion: cfn
+      QueuedTimeoutInMinutes: 120
+      TimeoutInMinutes: 15
+
+DJLNightLinuxGpuProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: djl-nightly-linux-gpu-build
+      Description: CodeBuild Project to build DJL nightly GPU build in linux environment
+      Artifacts:
+        Type: S3
+        Location:
+          Ref: DJLNightlyArtifacts
+        NamespaceType: NONE
+        Path: linux/gpu
+        Name: djl-linux-gpu-reports
+        OverrideArtifactName: true
+        Packaging: ZIP
+      BadgeEnabled: true
+      Environment:
+        Type: LINUX_GPU_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: nvidia/cuda:10.1-devel-ubuntu16.04
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+        S3Logs:
+          Status: ENABLED
+          Location:
+            !Sub
+              - ${bucketName}/linux/gpu
+              - {bucketName: !Ref DJLNightlyLogs}
+      Source:
+        BuildSpec: tools/ci/buildspecs/linux-gpu-buildspec.yml
+        Auth:
+          Type: OAUTH
+        Location: https://github.com/keerthanvasist/djl.git
+        Type: GITHUB
+      SourceVersion: cfn
+      QueuedTimeoutInMinutes: 120
+      TimeoutInMinutes: 15
+

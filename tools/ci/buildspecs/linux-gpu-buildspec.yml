@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - apt update
+      - apt-get install -y openjdk-8-jdk-headless
+      - export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+      - export PATH=$PATH:$JAVA_HOME/bin
+  build:
+    commands:
+       - ./gradlew -Dnightly=true build
+artifacts:
+  files:
+    - api/build/reports/**/*
+  name: djl-linux-gpu-reports-$(date +%Y%m%d-%H%M%S)

@@ -1,0 +1,10 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+       - ./gradlew.bat build
+artifacts:
+  files:
+    - api/build/reports/**/*
+  name: djl-win-cpu-reports-$(Get-Date -UFormat "%Y%m%d-%H%M%S")
