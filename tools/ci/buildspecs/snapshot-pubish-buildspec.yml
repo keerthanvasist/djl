@@ -8,8 +8,8 @@ phases:
        java: openjdk8
   build:
     commands:
-       - echo $ORG_GRADLE_PROJECT_ossrhPassword
+       - ./gradlew build -x test && ./gradlew publish -Psnapshot
 artifacts:
   files:
     - api/build/reports/**/*
-  name: djl-linux-cpu-reports-$(date +%Y%m%d-%H%M%S)
+  name: djl-snapshot-publish-reports-$(date +%Y%m%d-%H%M%S)
