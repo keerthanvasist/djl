@@ -1,0 +1,485 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+    DJLSNSTopicForFailedBuilds:
+        Type: AWS::SNS::Topic
+        Properties:
+          Subscription:
+            - Protocol: email
+              Endpoint: djl-dev@amazon.com
+          TopicName: djl-build-failure-topic
+
+    DJLNightlyCloudWatchScheduleRule:
+        Type: AWS::Events::Rule
+        Properties:
+            Description: The CloudWatch Event Rule that starts the nightly pipeline every day at 2am.
+            Name: djl-nightly-schedule
+            State: ENABLED
+            RoleArn: !GetAtt DJLNightlyCloudWatchServiceRole.Arn
+            ScheduleExpression: cron(0 2 * * ? *)
+            Targets:
+            - Id: djl-nightly-pipeline-target
+              RoleArn: !GetAtt DJLNightlyCloudWatchServiceRole.Arn
+              Arn:
+                !Join
+                - ':'
+                - - arn
+                  - aws
+                  - codepipeline
+                  - !Ref AWS::Region
+                  - !Ref AWS::AccountId
+                  - !Ref DJLNightlyPipeline
+
+    DJLNightlyCloudWatchNotificationRule:
+        Type: AWS::Events::Rule
+        Properties:
+            Description: The CloudWatch Event Rule that sends a notification to djl-build-failure-topic when a build fails.
+            Name: djl-nightly-failure-notification
+            State: ENABLED
+            EventPattern: "{
+                             \"source\": [
+                               \"aws.codepipeline\"
+                             ],
+                             \"detail-type\": [
+                               \"CodePipeline Pipeline Execution State Change\"
+                             ],
+                             \"detail\": {
+                               \"state\": [
+                                 \"FAILED\"
+                               ]
+                             }
+                           }"
+            Targets:
+            - Id: djl-nightly-failure-notification-target
+              InputTransformer:
+                InputTemplate: "\"DJL nightly build pipeline has failed\""
+              Arn: !Ref DJLSNSTopicForFailedBuilds
+
+    DJLNightlyCloudWatchServiceRole:
+        Type: AWS::IAM::Role
+        Description: Creating service role in IAM for AWS CloudWatch
+        Properties:
+          AssumeRolePolicyDocument:
+            Statement:
+            - Action: sts:AssumeRole
+              Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+          Path: /
+          Policies:
+          - PolicyName: cloudwatch-policy
+            PolicyDocument:
+                Statement:
+                - Effect: Allow
+                  Action:
+                  - sns:*
+                  Resource: !Ref DJLSNSTopicForFailedBuilds
+                - Effect: Allow
+                  Action:
+                  - codepipeline:StartPipelineExecution
+                  Resource:
+                  - !Join
+                    - ':'
+                    - - arn
+                      - aws
+                      - codepipeline
+                      - !Ref AWS::Region
+                      - !Ref AWS::AccountId
+                      - !Ref DJLNightlyPipeline
+
+    DJLNightlyPipelineServiceRole:
+        Type: AWS::IAM::Role
+        Description: Creating service role in IAM for AWS Pipeline
+        Properties:
+          AssumeRolePolicyDocument:
+            Statement:
+            - Action: sts:AssumeRole
+              Effect: Allow
+              Principal:
+                Service: codepipeline.amazonaws.com
+          Path: /
+          Policies:
+          - PolicyName: codepipeline-policy
+            PolicyDocument:
+                Statement:
+                - Action:
+                  - cloudwatch:*
+                  - s3:*
+                  - sns:*
+                  Resource: "*"
+                  Effect: Allow
+                - Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                  Resource: "*"
+                  Effect: Allow
+                Version: '2012-10-17'
+          RoleName: djl-nightly-pipeline-service-role
+
+    DJLCodeBuildServiceRole:
+        Type: AWS::IAM::Role
+        Description: Creating service role in IAM for AWS CodeBuild
+        Properties:
+          AssumeRolePolicyDocument:
+            Statement:
+            - Action: sts:AssumeRole
+              Effect: Allow
+              Principal:
+                Service: codebuild.amazonaws.com
+          Path: /
+          Policies:
+          - PolicyName: codebuild-policy
+            PolicyDocument:
+              Statement:
+              - Action:
+                - s3:*
+                Effect: Allow
+                Resource:
+                - !Join
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - !Ref DJLNightlyArtifacts
+                    - '/*'
+                - !Join
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - !Ref DJLNightlyLogs
+                    - /*
+                - !Join
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - !Ref DJLNightlyPipelineArtifacts
+                    - /*
+              - Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                Effect: Allow
+                Resource:
+                - !Join
+                  - ':'
+                  - - arn
+                    - aws
+                    - logs
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - log-group
+                    - !Join
+                      - /
+                      - - ''
+                        - aws
+                        - codebuild
+                        - '*'
+                    - '*'
+              - Action:
+                - codebuild:CreateReportGroup
+                - codebuild:CreateReport
+                - codebuild:UpdateReport
+                - codebuild:BatchPutTestCases
+                Effect: Allow
+                Resource:
+                - !Join
+                  - ':'
+                  - - arn
+                    - aws
+                    - codebuild
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - '*'
+          RoleName: djl-codebuild-service-role
+
+    DJLNightlyArtifacts:
+        Type: AWS::S3::Bucket
+        Properties:
+          AccessControl: Private
+          BucketName: djl-nightly-artifacts
+          PublicAccessBlockConfiguration:
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
+
+    DJLNightlyPipelineArtifacts:
+        Type: AWS::S3::Bucket
+        Properties:
+          AccessControl: Private
+          BucketName: djl-nightly-pipeline-artifacts
+          PublicAccessBlockConfiguration:
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
+
+    DJLNightlyLogs:
+        Type: AWS::S3::Bucket
+        Properties:
+          AccessControl: Private
+          BucketName: djl-nightly-logs
+          PublicAccessBlockConfiguration:
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
+
+    DJLNightlyLinuxCPUProject:
+        Type: AWS::CodeBuild::Project
+        Properties:
+          Name: djl-nightly-linux-cpu-build
+          Description: CodeBuild Project to build DJL nightly CPU build in linux environment
+          Artifacts:
+            Type: S3
+            Location: !Ref DJLNightlyArtifacts
+            NamespaceType: NONE
+            Path: linux/cpu
+            Name: djl-linux-cpu-reports
+            OverrideArtifactName: true
+            Packaging: ZIP
+            EncryptionDisabled: true
+          BadgeEnabled: true
+          Environment:
+            Type: LINUX_CONTAINER
+            ComputeType: BUILD_GENERAL1_LARGE
+            Image: aws/codebuild/standard:3.0
+          ServiceRole: !GetAtt DJLCodeBuildServiceRole.Arn
+          LogsConfig:
+            CloudWatchLogs:
+              Status: ENABLED
+            S3Logs:
+              Status: ENABLED
+              Location:
+                !Sub
+                  - ${bucketName}/linux/cpu
+                  - {bucketName: !Ref DJLNightlyLogs}
+          Source:
+            BuildSpec: "{
+                          version: 0.2,
+                          phases: {
+                            install: {
+                              runtime-versions: {
+                                java: openjdk8
+                              }
+                            },
+                            build: {
+                              commands: [
+                                ./gradlew -Dnightly=true build
+                              ]
+                            }
+                          },
+                          artifacts: {
+                            files: [
+                              api/build/reports/**/*,
+                              examples/build/reports/**/*,
+                              basicdataset/build/reports/**/*,
+                              model-zoo/build/reports/**/*,
+                              mxnet/mxnet-engine/build/reports/**/*,
+                              integration/build/reports/**/*,
+                              mxnet/mxnet-model-zoo/build/reports/**/*
+                            ],
+                            name: djl-linux-cpu-reports-$(date +%Y-%m-%d)
+                          }
+                        }"
+            Auth:
+              Type: OAUTH
+            Location: https://github.com/awslabs/djl.git
+            Type: GITHUB
+          SourceVersion: master
+          QueuedTimeoutInMinutes: 120
+          TimeoutInMinutes: 15
+
+    DJLNightlyWindowsCPUProject:
+        Type: AWS::CodeBuild::Project
+        Properties:
+          Name: djl-nightly-windows-cpu-build
+          Description: CodeBuild Project to build DJL nightly CPU build in windows environment
+          Artifacts:
+            Type: S3
+            Location: !Ref DJLNightlyArtifacts
+            NamespaceType: NONE
+            Path: windows/cpu
+            Name: djl-windows-cpu-reports
+            OverrideArtifactName: true
+            Packaging: ZIP
+            EncryptionDisabled: true
+          BadgeEnabled: true
+          Environment:
+            Type: WINDOWS_CONTAINER
+            ComputeType: BUILD_GENERAL1_LARGE
+            Image: deepjavalibrary/windows-jdk8:servercore2016
+          ServiceRole: !GetAtt DJLCodeBuildServiceRole.Arn
+          LogsConfig:
+            CloudWatchLogs:
+              Status: ENABLED
+            S3Logs:
+              Status: ENABLED
+              Location:
+                !Sub
+                  - ${bucketName}/windows/cpu
+                  - {bucketName: !Ref DJLNightlyLogs}
+          Source:
+            BuildSpec: "{
+                          'artifacts': {
+                            'files': [
+                              'api/build/reports/**/*',
+                              'examples/build/reports/**/*',
+                              'basicdataset/build/reports/**/*',
+                              'model-zoo/build/reports/**/*',
+                              'mxnet/mxnet-engine/build/reports/**/*',
+                              'integration/build/reports/**/*',
+                              'mxnet/mxnet-model-zoo/build/reports/**/*'
+                            ],
+                            'name': 'djl-win-cpu-reports-$(Get-Date -UFormat \",%Y-%m-%d-%H:%M:%S\")'
+                          },
+                          'phases': {
+                            'build': {
+                              'commands': [
+                                './gradlew.bat build'
+                              ]
+                            }
+                          },
+                          'version': 0.2
+                        }"
+            Auth:
+              Type: OAUTH
+            Location: https://github.com/awslabs/djl.git
+            Type: GITHUB
+          SourceVersion: master
+          QueuedTimeoutInMinutes: 120
+          TimeoutInMinutes: 30
+
+    DJLNightlyLinuxGPUProject:
+        Type: AWS::CodeBuild::Project
+        Properties:
+          Name: djl-nightly-linux-gpu-build
+          Description: CodeBuild Project to build DJL nightly GPU build in linux environment
+          Artifacts:
+            Type: S3
+            Location: !Ref DJLNightlyArtifacts
+            NamespaceType: NONE
+            Path: linux/gpu
+            Name: djl-linux-gpu-reports
+            OverrideArtifactName: true
+            Packaging: ZIP
+            EncryptionDisabled: true
+          BadgeEnabled: true
+          Environment:
+            Type: LINUX_GPU_CONTAINER
+            ComputeType: BUILD_GENERAL1_LARGE
+            Image: nvidia/cuda:10.1-devel-ubuntu16.04
+          ServiceRole: !GetAtt DJLCodeBuildServiceRole.Arn
+          LogsConfig:
+            CloudWatchLogs:
+              Status: ENABLED
+            S3Logs:
+              Status: ENABLED
+              Location:
+                !Sub
+                  - ${bucketName}/linux/gpu
+                  - {bucketName: !Ref DJLNightlyLogs}
+          Source:
+            BuildSpec: "{
+                          'artifacts': {
+                            'files': [
+                              'api/build/reports/**/*',
+                              'examples/build/reports/**/*',
+                              'basicdataset/build/reports/**/*',
+                              'model-zoo/build/reports/**/*',
+                              'mxnet/mxnet-engine/build/reports/**/*',
+                              'integration/build/reports/**/*',
+                              'mxnet/mxnet-model-zoo/build/reports/**/*'
+                            ],
+                            'name': 'djl-linux-gpu-reports-$(date +%Y-%m-%d)'
+                          },
+                          'phases': {
+                            'build': {
+                              'commands': [
+                                './gradlew -Dnightly=true build'
+                              ]
+                            },
+                            'install': {
+                              'commands': [
+                                'apt update',
+                                'apt-get install -y openjdk-8-jdk-headless',
+                                'export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64',
+                                'export PATH=$PATH:$JAVA_HOME/bin'
+                              ]
+                            }
+                          },
+                          'version': 0.2
+                        }"
+            Auth:
+              Type: OAUTH
+            Location: https://github.com/awslabs/djl.git
+            Type: GITHUB
+          SourceVersion: master
+          QueuedTimeoutInMinutes: 120
+          TimeoutInMinutes: 75
+
+    DJLNightlyPipeline:
+        Type: AWS::CodePipeline::Pipeline
+        Description: This pipeline runs the DJL nightly jobs.
+        Properties:
+            Name: djl-nightly-pipeline
+            RoleArn: !GetAtt DJLNightlyPipelineServiceRole.Arn
+            ArtifactStore:
+                Type: S3
+                Location: !Ref DJLNightlyPipelineArtifacts
+            Stages:
+            - Name: DJLSource
+              Actions:
+              - Name: DJLGitHubRepository
+                ActionTypeId:
+                  Category: Source
+                  Owner: ThirdParty
+                  Provider: GitHub
+                  Version: 1
+                Configuration:
+                  Owner: awslabs
+                  Repo: djl
+                  PollForSourceChanges: false
+                  Branch: master
+                  OAuthToken: '****'
+                OutputArtifacts:
+                - Name: DJLSource
+                Region: !Ref AWS::Region
+
+            - Name: DJLBuild
+              Actions:
+              - Name: DJLNightlyLinuxCPUBuild
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: 1
+                Configuration:
+                  ProjectName: !Ref DJLNightlyLinuxCPUProject
+                InputArtifacts:
+                - Name: DJLSource
+                OutputArtifacts:
+                - Name: DJLLinuxCPUBuildArtifact
+                Region: !Ref AWS::Region
+              - Name: DJLNightlyLinuxGPUBuild
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: 1
+                Configuration:
+                  ProjectName: !Ref DJLNightlyLinuxGPUProject
+                InputArtifacts:
+                - Name: DJLSource
+                OutputArtifacts:
+                - Name: DJLLinuxGPUBuildArtifact
+                Region: !Ref AWS::Region
+              - Name: DJLNightlyWindowsCPUBuild
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: 1
+                Configuration:
+                  ProjectName: !Ref DJLNightlyWindowsCPUProject
+                InputArtifacts:
+                - Name: DJLSource
+                OutputArtifacts:
+                - Name: DJLWinCPUBuildArtifact
+                Region: !Ref AWS::Region
