@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import ai.djl.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,7 +124,14 @@ public class MxTrainer implements Trainer {
                 NDList preds = forward(data);
                 long time = System.nanoTime();
                 NDArray lossValue = loss.evaluate(labels, preds);
+                /*logger.info("=====After forward====");
+                Utils.checkParameterValues(model.getBlock().getParameters(), true, logger);
+                logger.info("=====OUTPUT====");
+                Utils.checkNDArrayValues(preds.get(0), logger, "Output");
+                logger.info("Loss={}", lossValue);*/
                 collector.backward(lossValue);
+                /*logger.info("====After Backwork=====");
+                Utils.checkParameterValues(model.getBlock().getParameters(), true, logger);*/
                 addMetric("backward", time);
                 time = System.nanoTime();
                 batchData.getLabels().put(labels.get(0).getDevice(), labels);

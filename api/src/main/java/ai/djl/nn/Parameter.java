@@ -13,6 +13,7 @@
 package ai.djl.nn;
 
 import ai.djl.MalformedModelException;
+import ai.djl.engine.Engine;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
@@ -178,6 +179,7 @@ public class Parameter implements AutoCloseable {
     public void initialize(NDManager manager, DataType dataType, Shape[] inputShapes) {
         Objects.requireNonNull(initializer, "No initializer has been set");
         if (!isInitialized()) {
+            Engine.getInstance().setRandomSeed(1234);
             Shape shape = block.getParameterShape(name, inputShapes);
             array =
                     initializer.initialize(

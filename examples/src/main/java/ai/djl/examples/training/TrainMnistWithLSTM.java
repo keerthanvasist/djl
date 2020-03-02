@@ -27,6 +27,7 @@ import ai.djl.nn.SequentialBlock;
 import ai.djl.nn.core.Linear;
 import ai.djl.nn.norm.BatchNorm;
 import ai.djl.nn.recurrent.LSTM;
+import ai.djl.nn.recurrent.RNN;
 import ai.djl.training.DefaultTrainingConfig;
 import ai.djl.training.Trainer;
 import ai.djl.training.dataset.Dataset;
@@ -105,7 +106,7 @@ public final class TrainMnistWithLSTM {
                                 x.singletonOrThrow()
                                         .reshape(x.singletonOrThrow().getShape().get(0), 28, 28)));
         block.add(
-                new LSTM.Builder().setStateSize(64).setNumStackedLayers(1).optDropRate(0).build());
+                new LSTM.Builder().setStateSize(64).setNumStackedLayers(3).optDropRate(0).build());
         block.add(BatchNorm.builder().optEpsilon(1e-5f).optMomentum(0.9f).build());
         block.add(Blocks.batchFlattenBlock());
         block.add(Linear.builder().setOutChannels(10).build());

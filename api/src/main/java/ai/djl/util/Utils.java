@@ -12,6 +12,7 @@
  */
 package ai.djl.util;
 
+import ai.djl.TrainingDivergedException;
 import ai.djl.ndarray.NDArray;
 import ai.djl.nn.Parameter;
 import java.io.ByteArrayOutputStream;
@@ -221,14 +222,14 @@ public final class Utils {
     public static void checkParameterValues(
             PairList<String, Parameter> parameters, boolean checkGradient, Logger logger) {
         for (Parameter parameter : parameters.values()) {
-            logger.debug(
+            logger.info(
                     "Checking parameter: {} Shape: {}",
                     parameter.getName(),
                     parameter.getArray().getShape());
             checkNDArrayValues(parameter.getArray(), logger, "weight");
 
             if (parameter.requireGradient() && checkGradient) {
-                logger.debug("Checking gradient of: {}", parameter.getName());
+                logger.info("Checking gradient of: {}", parameter.getName());
                 checkNDArrayValues(parameter.getArray().getGradient(), logger, "grad");
             }
         }
@@ -247,11 +248,12 @@ public final class Utils {
             for (int i = 0; i < array.size(0); i++) {
                 logger.warn("{}", array.get(i));
             }
+            throw new TrainingDivergedException("NAN");
         }
-        logger.debug("{} sum: {}", prefix, array.sum().getFloat());
-        logger.debug("{} mean: {}", prefix, array.mean().getFloat());
-        logger.debug("{} max: {}", prefix, array.max().getFloat());
-        logger.debug("{} min: {}", prefix, array.min().getFloat());
-        logger.debug("{} shape: {}", prefix, array.getShape().toString());
+        logger.info("{} sum: {}", prefix, array.sum().getFloat());
+        logger.info("{} mean: {}", prefix, array.mean().getFloat());
+        logger.info("{} max: {}", prefix, array.max().getFloat());
+        logger.info("{} min: {}", prefix, array.min().getFloat());
+        logger.info("{} shape: {}", prefix, array.getShape().toString());
     }
 }
