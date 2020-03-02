@@ -19,6 +19,7 @@ import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.internal.NDArrayEx;
+import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Block;
 import ai.djl.nn.Parameter;
 import ai.djl.training.ParameterStore;
@@ -126,6 +127,18 @@ public class LSTM extends RecurrentCell {
             result.add(inputs.get(1));
         }
         return result;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Shape[] getOutputShapes(NDManager manager, Shape[] inputs) {
+        // Input shape at this point is TNC. Output Shape should be NTS
+        Shape inputShape = inputs[0];
+        return new Shape[] {
+            new Shape(inputShape.get(1), inputShape.get(0), stateSize * numDirections),
+            stateShape,
+            stateShape
+        };
     }
 
     /** {@inheritDoc} */

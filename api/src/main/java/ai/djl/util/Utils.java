@@ -223,7 +223,7 @@ public final class Utils {
             PairList<String, Parameter> parameters, boolean checkGradient, Logger logger) {
         for (Parameter parameter : parameters.values()) {
             logger.info(
-                    "Checking parameter: {} Shape: {}",
+                    "\nChecking parameter: {} Shape: {}",
                     parameter.getName(),
                     parameter.getArray().getShape());
             checkNDArrayValues(parameter.getArray(), logger, "weight");
@@ -254,6 +254,6 @@ public final class Utils {
         logger.info("{} mean: {}", prefix, array.mean().getFloat());
         logger.info("{} max: {}", prefix, array.max().getFloat());
         logger.info("{} min: {}", prefix, array.min().getFloat());
-        logger.info("{} shape: {}", prefix, array.getShape().toString());
+        logger.info("{} shape: {}\n", prefix, array.getShape().toString());
     }
 }
