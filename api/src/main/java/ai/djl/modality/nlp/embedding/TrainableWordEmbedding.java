@@ -32,11 +32,13 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * {@code VocabWordEmbedding} is an implementation of {@link WordEmbedding} based on a Vocabulary or
- * an {@link Embedding} block. This {@link WordEmbedding} is ideal when there is no pre-trained
- * embeddings available, or when the pre-trained embedding needs to further trained.
+ * {@code TrainableWordEmbedding} is an implementation of {@link WordEmbedding} based on a
+ * Vocabulary or an {@link Embedding} block. This {@link WordEmbedding} is ideal when there are no
+ * pre-trained embeddings available, or when the pre-trained embedding needs to further trained.
  */
 public class TrainableWordEmbedding extends AbstractBlock implements WordEmbedding {
+
+    private static final byte VERSION = 1;
     private static final String DEFAULT_UNKNOWN_TOKEN = "<unk>";
 
     private Embedding<String> embedding;
@@ -110,6 +112,7 @@ public class TrainableWordEmbedding extends AbstractBlock implements WordEmbeddi
     /** {@inheritDoc} */
     @Override
     public Shape[] initialize(NDManager manager, DataType dataType, Shape... inputShapes) {
+        beforeInitialize(inputShapes);
         return embedding.initialize(manager, dataType, inputShapes);
     }
 
@@ -141,6 +144,8 @@ public class TrainableWordEmbedding extends AbstractBlock implements WordEmbeddi
     /** {@inheritDoc} */
     @Override
     public void saveParameters(DataOutputStream os) throws IOException {
+        os.writeByte(VERSION);
+        saveInputShapes(os);
         embedding.saveParameters(os);
     }
 
@@ -148,6 +153,11 @@ public class TrainableWordEmbedding extends AbstractBlock implements WordEmbeddi
     @Override
     public void loadParameters(NDManager manager, DataInputStream is)
             throws IOException, MalformedModelException {
+        byte version = is.readByte();
+        if (version != VERSION) {
+            throw new MalformedModelException("Unsupported encoding version: " + version);
+        }
+        readInputShapes(is);
         embedding.loadParameters(manager, is);
     }
 }

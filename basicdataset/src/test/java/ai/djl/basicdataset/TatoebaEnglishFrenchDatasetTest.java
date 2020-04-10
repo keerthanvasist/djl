@@ -34,7 +34,8 @@ public class TatoebaEnglishFrenchDatasetTest {
                                     TestUtils.getTextEmbedding(manager, EMBEDDING_SIZE), false)
                             .optTargetTextEmbedding(
                                     TestUtils.getTextEmbedding(manager, EMBEDDING_SIZE), false)
-                            .setTokenizer(new SimpleTokenizer())
+                            .setSourceTokenizer(new SimpleTokenizer())
+                            .setTargetTokenizer(new SimpleTokenizer())
                             .setValidLength(true)
                             .setSampling(32, true)
                             .build();
@@ -55,15 +56,17 @@ public class TatoebaEnglishFrenchDatasetTest {
             TatoebaEnglishFrenchDataset tatoebaEnglishFrenchDataset =
                     TatoebaEnglishFrenchDataset.builder()
                             .optEmbeddingSize(EMBEDDING_SIZE)
-                            .setTokenizer(new SimpleTokenizer())
+                            .setSourceTokenizer(new SimpleTokenizer())
+                            .setTargetTokenizer(new SimpleTokenizer())
                             .setValidLength(false)
                             .setSampling(32, true)
+                            .optEmbeddingSize(15)
                             .build();
             tatoebaEnglishFrenchDataset.prepare();
             Record record = tatoebaEnglishFrenchDataset.get(manager, 0);
             Assert.assertEquals(record.getData().get(0).getShape(), new Shape(10));
             Assert.assertEquals(record.getData().size(), 1);
-            Assert.assertEquals(record.getLabels().get(0).getShape(), new Shape(12));
+            Assert.assertEquals(record.getLabels().get(0).getShape(), new Shape(10));
             Assert.assertEquals(record.getLabels().size(), 1);
         }
     }

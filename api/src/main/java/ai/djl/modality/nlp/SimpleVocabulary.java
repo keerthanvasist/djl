@@ -79,6 +79,7 @@ public class SimpleVocabulary implements Vocabulary {
                 .setType(String.class)
                 .setEmbeddingSize(embeddingSize)
                 .setItems(tokens.keySet())
+                .optUseDefault(false)
                 .build();
     }
 

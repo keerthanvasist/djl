@@ -33,7 +33,8 @@ public class StanfordMovieReviewTest {
                                     TestUtils.getTextEmbedding(manager, EMBEDDING_SIZE), false)
                             .optTargetTextEmbedding(
                                     TestUtils.getTextEmbedding(manager, EMBEDDING_SIZE), false)
-                            .setTokenizer(new SimpleTokenizer())
+                            .setSourceTokenizer(new SimpleTokenizer())
+                            .setTargetTokenizer(new SimpleTokenizer())
                             .setValidLength(true)
                             .setSampling(32, true)
                             .build();
@@ -51,10 +52,11 @@ public class StanfordMovieReviewTest {
         try (NDManager manager = NDManager.newBaseManager()) {
             StanfordMovieReview dataset =
                     StanfordMovieReview.builder()
-                            .optEmbeddingSize(EMBEDDING_SIZE)
-                            .setTokenizer(new SimpleTokenizer())
+                            .setSourceTokenizer(new SimpleTokenizer())
+                            .setTargetTokenizer(new SimpleTokenizer())
                             .setValidLength(false)
                             .setSampling(32, true)
+                            .optEmbeddingSize(EMBEDDING_SIZE)
                             .build();
             dataset.prepare();
 
