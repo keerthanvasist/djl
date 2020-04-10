@@ -16,7 +16,6 @@ import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
-import ai.djl.training.ParameterStore;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,17 +48,6 @@ public class SimpleTextEmbedding implements TextEmbedding {
         NDList result = new NDList();
         for (NDArray token : split) {
             result.add(wordEmbedding.embedWord(token.get(0)));
-        }
-        return NDArrays.stack(result);
-    }
-
-    @Override
-    public NDArray embedText(ParameterStore parameterStore, NDArray text)
-            throws EmbeddingException {
-        NDList split = text.split(text.getShape().get(0));
-        NDList result = new NDList();
-        for (NDArray token : split) {
-            result.add(wordEmbedding.embedWord(parameterStore, token.get(0)).get(0));
         }
         return NDArrays.stack(result);
     }
