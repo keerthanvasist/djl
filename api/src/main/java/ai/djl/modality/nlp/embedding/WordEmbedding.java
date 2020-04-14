@@ -77,10 +77,11 @@ public interface WordEmbedding {
     NDArray embedWord(NDArray word) throws EmbeddingException;
 
     /**
-     * Returns the closest matching word for a given embedding.
+     * Returns the closest matching word for the given index.
      *
-     * @param wordEmbedding the word embedding to find the matching string word for.
+     * @param word the word embedding to find the matching string word for.
      * @return a word similar to the passed in embedding
+     * @throws EmbeddingException if the input is not an unembeddable index
      */
-    String unembedWord(NDArray wordEmbedding);
+    String unembedWord(NDArray word) throws EmbeddingException;
 }

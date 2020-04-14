@@ -67,7 +67,7 @@ public class TrainableTextEmbedding extends AbstractBlock implements TextEmbeddi
 
     /** {@inheritDoc} */
     @Override
-    public List<String> unembedText(NDArray textEmbedding) {
+    public List<String> unembedText(NDArray textEmbedding) throws EmbeddingException {
         NDList split = textEmbedding.split(textEmbedding.getShape().get(0));
         List<String> result = new ArrayList<>(split.size());
         for (NDArray token : split) {

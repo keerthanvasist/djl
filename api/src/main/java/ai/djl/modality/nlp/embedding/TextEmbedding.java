@@ -74,6 +74,7 @@ public interface TextEmbedding {
      *
      * @param textEmbedding the text embedding to find the matching string text for.
      * @return text similar to the passed in embedding
+     * @throws EmbeddingException if the input is not unembeddable
      */
-    List<String> unembedText(NDArray textEmbedding);
+    List<String> unembedText(NDArray textEmbedding) throws EmbeddingException;
 }

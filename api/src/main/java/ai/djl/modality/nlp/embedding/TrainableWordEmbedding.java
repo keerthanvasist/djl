@@ -98,8 +98,11 @@ public class TrainableWordEmbedding extends AbstractBlock implements WordEmbeddi
 
     /** {@inheritDoc} */
     @Override
-    public String unembedWord(NDArray wordEmbedding) {
-        throw new UnsupportedOperationException("This operation is not supported yet.");
+    public String unembedWord(NDArray word) throws EmbeddingException {
+        if (!word.isScalar()) {
+            throw new EmbeddingException("NDArray word must be scalar index");
+        }
+        return embedding.unembed(word.toIntArray()[0]);
     }
 
     /** {@inheritDoc} */

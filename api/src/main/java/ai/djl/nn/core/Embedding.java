@@ -20,6 +20,7 @@ import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.internal.NDArrayEx;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.ndarray.types.Shape;
+import ai.djl.ndarray.types.SparseFormat;
 import ai.djl.nn.Block;
 import ai.djl.nn.Parameter;
 import ai.djl.nn.ParameterBlock;
@@ -27,9 +28,12 @@ import ai.djl.nn.ParameterType;
 import ai.djl.nn.convolutional.Conv2D.Builder;
 import ai.djl.training.ParameterStore;
 import ai.djl.util.PairList;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,12 +48,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Embedding<T> extends ParameterBlock {
 
-    private static final byte VERSION = 2;
+    private static final byte VERSION = 3;
+    private static final Gson GSON = new Gson();
 
     private int embeddingSize;
     private boolean useDefault;
+    private boolean sparseGrad;
     private DataType dataType;
     private Map<T, Integer> embedder;
+    private Map<Integer, T> unembedder;
     private int numItems;
 
     private Parameter embedding;
@@ -57,15 +64,25 @@ public class Embedding<T> extends ParameterBlock {
     Embedding(Builder<T> builder) {
         embeddingSize = builder.embeddingSize;
         useDefault = builder.useDefault;
+        sparseGrad = builder.sparseGrad;
         dataType = builder.dataType;
-        embedding = new Parameter("embedding", this, ParameterType.WEIGHT);
+        embedding =
+                new Parameter(
+                        "embedding",
+                        this,
+                        ParameterType.WEIGHT,
+                        true,
+                        SparseFormat.DENSE,
+                        sparseGrad ? SparseFormat.ROW_SPARSE : SparseFormat.DENSE);
         embedder = new ConcurrentHashMap<>(builder.items.size());
+        unembedder = new ConcurrentHashMap<>(builder.items.size());
         numItems = 0;
         if (useDefault) {
             numItems++;
         }
         for (T item : builder.items) {
-            embedder.put(item, numItems++);
+            embedder.put(item, numItems);
+            unembedder.put(numItems++, item);
         }
         inputShapes = new Shape[] {new Shape(-1)};
     }
@@ -77,15 +94,36 @@ public class Embedding<T> extends ParameterBlock {
      * @param items the items in the embedding (in matching order to the embedding array)
      */
     public Embedding(NDArray embedding, List<T> items) {
+        this(embedding, items, true);
+    }
+
+    /**
+     * Constructs a pretrained embedding.
+     *
+     * @param embedding the embedding array
+     * @param items the items in the embedding (in matching order to the embedding array)
+     * @param sparseGrad whether to compute row sparse gradient in the backward calculation
+     */
+    public Embedding(NDArray embedding, List<T> items, boolean sparseGrad) {
         embeddingSize = Math.toIntExact(embedding.getShape().get(1));
         useDefault = false;
+        this.sparseGrad = sparseGrad;
         dataType = embedding.getDataType();
-        this.embedding = new Parameter("embedding", this, ParameterType.WEIGHT);
+        this.embedding =
+                new Parameter(
+                        "embedding",
+                        this,
+                        ParameterType.WEIGHT,
+                        true,
+                        SparseFormat.DENSE,
+                        sparseGrad ? SparseFormat.ROW_SPARSE : SparseFormat.DENSE);
         this.embedding.setArray(embedding);
         numItems = items.size();
         embedder = new ConcurrentHashMap<>(numItems);
+        unembedder = new ConcurrentHashMap<>(numItems);
         for (int i = 0; i < items.size(); i++) {
             embedder.put(items.get(i), i);
+            unembedder.put(i, items.get(i));
         }
         inputShapes = new Shape[] {new Shape(-1)};
     }
@@ -127,7 +165,8 @@ public class Embedding<T> extends ParameterBlock {
         NDList opInputs = opInputs(parameterStore, inputs);
 
         NDArrayEx ex = opInputs.head().getNDArrayInternal();
-        NDList result = ex.embedding(opInputs, numItems, embeddingSize, dataType, params);
+        NDList result =
+                ex.embedding(opInputs, numItems, embeddingSize, sparseGrad, dataType, params);
         if (inputs.head().getShape().dimension() == 0) {
             result = new NDList(result.singletonOrThrow().reshape(embeddingSize));
         }
@@ -139,6 +178,11 @@ public class Embedding<T> extends ParameterBlock {
     public void saveParameters(DataOutputStream os) throws IOException {
         os.writeByte(VERSION);
         saveInputShapes(os);
+        os.writeBoolean(useDefault);
+        os.writeBoolean(sparseGrad);
+        os.writeUTF(dataType.toString());
+        os.writeUTF(GSON.toJson(embedder));
+        os.writeUTF(GSON.toJson(unembedder));
         embedding.save(os);
     }
 
@@ -148,6 +192,15 @@ public class Embedding<T> extends ParameterBlock {
             throws IOException, MalformedModelException {
         byte version = is.readByte();
         if (version == VERSION) {
+            readInputShapes(is);
+            useDefault = is.readBoolean();
+            sparseGrad = is.readBoolean();
+            dataType = DataType.valueOf(is.readUTF());
+            Type type = new TypeToken<ConcurrentHashMap<T, Integer>>() {}.getType();
+            embedder = GSON.fromJson(is.readUTF(), type);
+            type = new TypeToken<ConcurrentHashMap<Integer, T>>() {}.getType();
+            unembedder = GSON.fromJson(is.readUTF(), type);
+        } else if (version == 2) {
             readInputShapes(is);
         } else if (version != 1) {
             throw new MalformedModelException("Unsupported encoding version: " + version);
@@ -201,6 +254,16 @@ public class Embedding<T> extends ParameterBlock {
         return manager.create(embedHelper(item));
     }
 
+    /**
+     * Returns the item corresponding to the given index.
+     *
+     * @param index the index
+     * @return the item corresponding to the given index
+     */
+    public T unembed(int index) {
+        return unembedder.get(index);
+    }
+
     private int embedHelper(T value) {
         if (embedder.containsKey(value)) {
             return embedder.get(value);
@@ -224,6 +287,7 @@ public class Embedding<T> extends ParameterBlock {
         private Collection<T> items;
         private int embeddingSize;
         private boolean useDefault = true;
+        private boolean sparseGrad = true;
         private DataType dataType = DataType.FLOAT32;
 
         Builder() {}
@@ -233,6 +297,7 @@ public class Embedding<T> extends ParameterBlock {
             this.embeddingSize = parent.embeddingSize;
             this.useDefault = parent.useDefault;
             this.dataType = parent.dataType;
+            this.sparseGrad = parent.sparseGrad;
         }
 
         /**
@@ -286,6 +351,18 @@ public class Embedding<T> extends ParameterBlock {
          */
         public Builder<T> optUseDefault(boolean useDefault) {
             this.useDefault = useDefault;
+            return this;
+        }
+
+        /**
+         * Sets the optional parameter whether to compute row sparse gradient in the backward
+         * calculation. If set to True, the grad’s storage type is row_sparse.
+         *
+         * @param sparseGrad whether to compute row sparse gradient in the backward calculation
+         * @return this Builder
+         */
+        public Builder<T> optSparseGrad(boolean sparseGrad) {
+            this.sparseGrad = sparseGrad;
             return this;
         }
 
