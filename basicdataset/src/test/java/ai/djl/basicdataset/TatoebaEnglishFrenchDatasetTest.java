@@ -55,12 +55,13 @@ public class TatoebaEnglishFrenchDatasetTest {
                             .optEmbeddingSize(EMBEDDING_SIZE)
                             .setValidLength(false)
                             .setSampling(32, true)
+                            .optEmbeddingSize(15)
                             .build();
             tatoebaEnglishFrenchDataset.prepare();
             Record record = tatoebaEnglishFrenchDataset.get(manager, 0);
             Assert.assertEquals(record.getData().get(0).getShape(), new Shape(10));
             Assert.assertEquals(record.getData().size(), 1);
-            Assert.assertEquals(record.getLabels().get(0).getShape(), new Shape(12));
+            Assert.assertEquals(record.getLabels().get(0).getShape(), new Shape(10));
             Assert.assertEquals(record.getLabels().size(), 1);
         }
     }
