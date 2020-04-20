@@ -118,22 +118,35 @@ public class MxTrainer implements Trainer {
             throw new IllegalArgumentException(
                     "The data must be on the same engine as the trainer. You may need to change one of your NDManagers.");
         }
+        //long start = System.nanoTime();
         Batch[] splits = batch.split(devices, false);
+        /*logger.info("Batch split={}", (System.nanoTime() - start));
+        start = System.nanoTime();*/
         BatchData batchData =
                 new BatchData(batch, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
         try (GradientCollector collector = newGradientCollector()) {
             for (Batch split : splits) {
                 NDList data = dataManager.getData(split);
                 NDList labels = dataManager.getLabels(split);
+                /*logger.info("Batch fetch={}", (System.nanoTime() - start));
+                start = System.nanoTime();*/
                 NDList preds = forward(data);
+                /*logger.info("Batch forward={}", (System.nanoTime() - start));
+                start = System.nanoTime();*/
                 long time = System.nanoTime();
                 NDArray lossValue = loss.evaluate(labels, preds);
+                /*logger.info("Batch loss={}", (System.nanoTime() - start));
+                start = System.nanoTime();*/
                 collector.backward(lossValue);
+                /*logger.info("Batch backward={}", (System.nanoTime() - start));
+                start = System.nanoTime();*/
                 addMetric("backward", time);
                 time = System.nanoTime();
                 batchData.getLabels().put(labels.get(0).getDevice(), labels);
                 batchData.getPredictions().put(preds.get(0).getDevice(), preds);
                 addMetric("training-metrics", time);
+                /*logger.info("Batch metrics={}", (System.nanoTime() - start));
+                start = System.nanoTime();*/
             }
         }
 
@@ -141,7 +154,9 @@ public class MxTrainer implements Trainer {
         // count batch begin time at end of batch to include batch loading time
         batchBeginTime = System.nanoTime();
 
-        listeners.forEach(listener -> listener.onTrainingBatch(this, batchData));
+        //listeners.forEach(listener -> listener.onTrainingBatch(this, batchData));
+
+        //logger.info("Batch listener={}", (System.nanoTime() - start));
     }
 
     /** {@inheritDoc} */
@@ -150,6 +165,17 @@ public class MxTrainer implements Trainer {
         long begin = System.nanoTime();
         try {
             return model.getBlock().forward(parameterStore, input);
+        } finally {
+            addMetric("forward", begin);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public NDList predict(NDList input){
+        long begin = System.nanoTime();
+        try {
+            return model.getBlock().predict(parameterStore, input);
         } finally {
             addMetric("forward", begin);
         }
@@ -169,7 +195,6 @@ public class MxTrainer implements Trainer {
         for (Batch split : splits) {
             NDList data = dataManager.getData(split);
             NDList labels = dataManager.getLabels(split);
-
             NDList preds = forward(data);
             batchData.getLabels().put(labels.get(0).getDevice(), labels);
             batchData.getPredictions().put(preds.get(0).getDevice(), preds);

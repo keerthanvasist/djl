@@ -40,8 +40,9 @@ public class SimpleVocabulary implements Vocabulary {
         minFrequency = builder.minFrequency;
         unknownToken = builder.unknownToken;
         reservedTokens.add(unknownToken);
+        long i = 0;
         for (String token : reservedTokens) {
-            tokens.put(token, new TokenInfo(Integer.MAX_VALUE));
+            indexToToken.add(token);
         }
         for (List<String> sentence : builder.sentences) {
             addAllTokens(sentence);

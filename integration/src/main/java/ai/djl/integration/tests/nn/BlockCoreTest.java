@@ -56,7 +56,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class BlockCoreTest {
-
     @Test
     public void testLinear() throws IOException, MalformedModelException {
         TrainingConfig config =
@@ -464,7 +463,7 @@ public class BlockCoreTest {
                                 },
                                 new Shape(1, 2, 4));
                 Assertions.assertAlmostEquals(result.head(), expected);
-                Assertions.assertAlmostEquals(result.size(), 2);
+                Assertions.assertAlmostEquals(result.size(), 3);
                 NDArray lossValue = loss.evaluate(new NDList(labels), new NDList(result.head()));
                 Assertions.assertAlmostEquals(lossValue.getFloat(), -16.340019);
                 testEncode(manager, block);

@@ -58,7 +58,7 @@ public interface WordEmbedding {
      * @param manager the manager for the embedding array
      * @param word the word to embed
      * @return the embedded word
-     * @throws ai.djl.modality.nlp.embedding.EmbeddingException if there is an error while trying to
+     * @throws EmbeddingException if there is an error while trying to
      *     embed
      */
     default NDArray embedWord(NDManager manager, String word) throws EmbeddingException {
@@ -71,7 +71,7 @@ public interface WordEmbedding {
      *
      * @param word the word to embed
      * @return the embedded word
-     * @throws ai.djl.modality.nlp.embedding.EmbeddingException if there is an error while trying to
+     * @throws EmbeddingException if there is an error while trying to
      *     embed
      */
     NDArray embedWord(NDArray word) throws EmbeddingException;
@@ -83,5 +83,5 @@ public interface WordEmbedding {
      * @return a word similar to the passed in embedding
      * @throws EmbeddingException if the input is not an unembeddable index
      */
-    String unembedWord(NDArray word) throws EmbeddingException;
+    String unembedWord(NDArray word);
 }

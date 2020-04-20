@@ -120,6 +120,14 @@ public class EncoderDecoder extends AbstractBlock {
         return forward(parameterStore, inputs, null);
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public NDList predict(ParameterStore parameterStore, NDList inputs) {
+        NDList encoderOutputs = encoder.forward(parameterStore, new NDList(inputs.get(0)), null);
+        decoder.initState(encoder.getState(encoderOutputs));
+        return decoder.predict(parameterStore, new NDList(inputs.get(1)));
+    }
+
     /**
      * Initializes the parameters of the block. This method must be called before calling `forward`.
      *

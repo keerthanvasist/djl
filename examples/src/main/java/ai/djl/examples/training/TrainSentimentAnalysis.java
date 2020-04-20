@@ -1,40 +1,29 @@
-/*
- * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance
- * with the License. A copy of the License is located at
- *
- * http://aws.amazon.com/apache2.0/
- *
- * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
- * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
- */
 package ai.djl.examples.training;
 
 import ai.djl.Device;
 import ai.djl.Model;
 import ai.djl.basicdataset.TatoebaEnglishFrenchDataset;
 import ai.djl.basicdataset.TextDataset;
-import ai.djl.basicmodelzoo.nlp.SimpleSequenceDecoder;
-import ai.djl.basicmodelzoo.nlp.SimpleSequenceEncoder;
 import ai.djl.examples.training.util.Arguments;
 import ai.djl.examples.training.util.TrainingUtils;
 import ai.djl.metric.Metrics;
+import ai.djl.modality.nlp.Decoder;
+import ai.djl.modality.nlp.Encoder;
 import ai.djl.modality.nlp.EncoderDecoder;
 import ai.djl.modality.nlp.embedding.TrainableTextEmbedding;
 import ai.djl.ndarray.NDArray;
+import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
-import ai.djl.ndarray.index.NDIndex;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Block;
+import ai.djl.nn.SequentialBlock;
+import ai.djl.nn.core.Linear;
 import ai.djl.nn.recurrent.LSTM;
-import ai.djl.training.DataManager;
 import ai.djl.training.DefaultTrainingConfig;
+import ai.djl.training.ParameterStore;
 import ai.djl.training.Trainer;
 import ai.djl.training.TrainingResult;
-import ai.djl.training.dataset.Batch;
 import ai.djl.training.dataset.Dataset;
 import ai.djl.training.initializer.XavierInitializer;
 import ai.djl.training.listener.TrainingListener;
@@ -42,6 +31,9 @@ import ai.djl.training.loss.MaskedSoftmaxCrossEntropyLoss;
 import ai.djl.training.optimizer.Adam;
 import ai.djl.training.optimizer.learningrate.LearningRateTracker;
 import ai.djl.training.util.ProgressBar;
+import ai.djl.util.PairList;
+import org.apache.commons.cli.ParseException;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,13 +42,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-import org.apache.commons.cli.ParseException;
-
-public final class TrainSeq2Seq {
-    private TrainSeq2Seq() {}
-
+public class TrainSentimentAnalysis {
     public static void main(String[] args) throws IOException, ParseException {
-        TrainSeq2Seq.runExample(args);
+        TrainSentimentAnalysis.runExample(args);
     }
 
     public static TrainingResult runExample(String[] args) throws IOException, ParseException {
@@ -68,8 +56,7 @@ public final class TrainSeq2Seq {
             TextDataset validateSet = getDataset(Dataset.Usage.TEST, arguments);
 
             TrainableTextEmbedding sourceTextEmbedding = (TrainableTextEmbedding) trainingSet.getTextEmbedding(true);
-            TrainableTextEmbedding targetTextEmbedding = (TrainableTextEmbedding) trainingSet.getTextEmbedding(false);
-            model.setBlock(getSeq2SeqModel(sourceTextEmbedding, targetTextEmbedding, trainingSet.getVocabulary(false).size()));
+            model.setBlock(getModel(sourceTextEmbedding));
 
             // setup training configuration
             DefaultTrainingConfig config = setupTrainingConfig(arguments);
@@ -87,7 +74,7 @@ public final class TrainSeq2Seq {
                 Shape decoderInputShape = new Shape(arguments.getBatchSize(), 9);
 
                 // initialize trainer with proper input shape
-                trainer.initialize(encoderInputShape, decoderInputShape);
+                trainer.initialize(encoderInputShape);
 
                 TrainingUtils.fit(
                         trainer,
@@ -105,42 +92,18 @@ public final class TrainSeq2Seq {
                 System.out.println(modelSavePath.toAbsolutePath());
                 model.save(modelSavePath, "trainSeqToSeq");
 
-                NDList predictionInput = new NDList();
-                NDArray sourceIndices = sourceTextEmbedding.preprocessTextToEmbed(model.getNDManager(), Arrays.asList("I won !?".split(" ")));
-                NDArray targetIndex = targetTextEmbedding.preprocessTextToEmbed(model.getNDManager(), Collections.singletonList("<bos>")).reshape(new Shape(1, 1));
-                predictionInput.add(sourceIndices.reshape(1, sourceIndices.getShape().size()));
-                predictionInput.add(targetIndex);
-
-                NDList prediction = model.newTrainer(new DefaultTrainingConfig(new MaskedSoftmaxCrossEntropyLoss())).predict(predictionInput);
-                List<String> translation = targetTextEmbedding.unembedText(prediction.head().flatten().toType(DataType.INT32, false));
-                System.out.println(translation);
-
                 return result;
             }
         }
     }
 
-    private static Block getSeq2SeqModel(TrainableTextEmbedding sourceEmbedding, TrainableTextEmbedding targetEmbedding, int vocabSize) {
-        SimpleSequenceEncoder simpleSequenceEncoder =
-                new SimpleSequenceEncoder(
-                        sourceEmbedding,
-                        new LSTM.Builder()
-                                .setStateSize(32)
-                                .setNumStackedLayers(2)
-                                .optDropRate(0)
-                                .build());
-        SimpleSequenceDecoder simpleSequenceDecoder =
-                new SimpleSequenceDecoder(
-                        targetEmbedding,
-                        new LSTM.Builder()
-                                .setStateSize(32)
-                                .setNumStackedLayers(2)
-                                .optDropRate(0)
-                                .build(),
-                        vocabSize,
-                        "<bos>",
-                        "<eos>");
-        return new EncoderDecoder(simpleSequenceEncoder, simpleSequenceDecoder);
+    private static Block getModel(TrainableTextEmbedding trainableTextEmbedding) {
+        SequentialBlock sequentialBlock = new SequentialBlock();
+        sequentialBlock
+                .add(trainableTextEmbedding)
+                .add(LSTM.builder().setNumStackedLayers(1).setSequenceLength(false).setStateSize(100).optStateOutput(false).build())
+                .add(Linear.builder().setOutChannels(2).optFlatten(false).build());
+        return sequentialBlock;
     }
 
     public static DefaultTrainingConfig setupTrainingConfig(Arguments arguments) {
@@ -151,8 +114,7 @@ public final class TrainSeq2Seq {
                                 .optLearningRateTracker(
                                         LearningRateTracker.fixedLearningRate(0.005f))
                                 .build())
-                .optDevices(Device.getDevices(arguments.getMaxGpus()))
-                .optDataManager(new Seq2SeqDataManager());
+                .optDevices(Device.getDevices(arguments.getMaxGpus()));
     }
 
     public static TextDataset getDataset(Dataset.Usage usage, Arguments arguments)
@@ -164,25 +126,9 @@ public final class TrainSeq2Seq {
                         .optEmbeddingSize(32)
                         .optUsage(usage)
                         .optLimit(arguments.getLimit())
+                        .optExecutor(Executors.newFixedThreadPool(arguments.getBatchSize()), arguments.getBatchSize())
                         .build();
         tatoebaEnglishFrenchDataset.prepare(new ProgressBar());
         return tatoebaEnglishFrenchDataset;
-    }
-
-    private static class Seq2SeqDataManager extends DataManager {
-        @Override
-        public NDList getData(Batch batch) {
-            NDList data = new NDList();
-            data.add(batch.getData().head());
-            NDArray target = batch.getLabels().head().get(new NDIndex(":, :-1"));
-            data.add(target);
-            return data;
-        }
-
-        @Override
-        public NDList getLabels(Batch batch) {
-            NDList labels = batch.getLabels();
-            return new NDList(labels.head().get(new NDIndex(":, 1:")), labels.get(1));
-        }
     }
 }

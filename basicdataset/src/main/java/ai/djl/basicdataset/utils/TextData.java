@@ -111,8 +111,11 @@ public class TextData {
         size = textData.size();
         if (textEmbedding == null) {
             textEmbedding =
-                    new TrainableTextEmbedding(
-                            new TrainableWordEmbedding(vocabulary, embeddingSize));
+                    new TrainableTextEmbedding(TrainableWordEmbedding.builder()
+                            .setEmbeddingSize(embeddingSize)
+                            .setItems(new ArrayList<>(vocabulary.getAllTokens()))
+                            .optSparseGrad(false)
+                            .build());
             trainEmbedding = true;
         }
     }

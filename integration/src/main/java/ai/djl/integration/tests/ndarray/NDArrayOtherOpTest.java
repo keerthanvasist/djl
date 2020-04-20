@@ -659,6 +659,14 @@ public class NDArrayOtherOpTest {
             NDArray broadcasted = array.broadcast(2, 2);
             NDArray expected = manager.create(new float[] {1, 2, 1, 2}, new Shape(2, 2));
             Assert.assertEquals(broadcasted, expected);
+
+            array = manager.arange(5).reshape(1, 1, 5);
+            NDArray array2 = manager.arange(5).reshape(1, 1, 5);
+            NDArray array3 = manager.arange(5).reshape(1, 1, 5);
+            Assert.assertEquals(NDArrays.concat(new NDList(array, array2, array3), 1).getShape(), new Shape(1, 3, 5));
+
+
+
             // multi-dim
             array = manager.arange(4).reshape(2, 2);
             broadcasted = array.broadcast(3, 2, 2);

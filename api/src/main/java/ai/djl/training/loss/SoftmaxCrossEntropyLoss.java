@@ -25,7 +25,6 @@ import ai.djl.ndarray.NDList;
  * the shape of {@code prediction}. Then, \(L = -\sum_i \sum_j {label}_j \log p_{ij}\).
  */
 public class SoftmaxCrossEntropyLoss extends Loss {
-
     private float weight;
     private int classAxis;
     private boolean sparseLabel;
@@ -79,9 +78,10 @@ public class SoftmaxCrossEntropyLoss extends Loss {
             lab = lab.reshapeLike(pred);
             loss = pred.mul(lab).neg().sum(new int[] {classAxis}, true);
         }
+
         if (weight != 1) {
             loss = loss.mul(weight);
         }
-        return loss.mean();
+        return loss.mean(new int[] {1});
     }
 }

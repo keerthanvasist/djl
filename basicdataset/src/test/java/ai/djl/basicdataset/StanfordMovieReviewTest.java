@@ -30,8 +30,6 @@ public class StanfordMovieReviewTest {
                     StanfordMovieReview.builder()
                             .optSourceTextEmbedding(
                                     TestUtils.getTextEmbedding(manager, EMBEDDING_SIZE), false)
-                            .optTargetTextEmbedding(
-                                    TestUtils.getTextEmbedding(manager, EMBEDDING_SIZE), false)
                             .setValidLength(true)
                             .setSampling(32, true)
                             .build();

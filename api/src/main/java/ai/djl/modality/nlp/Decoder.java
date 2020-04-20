@@ -24,6 +24,9 @@ import ai.djl.nn.BlockList;
 import ai.djl.nn.Parameter;
 import ai.djl.training.ParameterStore;
 import ai.djl.util.PairList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -37,7 +40,7 @@ import java.util.List;
  */
 public abstract class Decoder extends AbstractBlock {
     protected Block block;
-
+    private Logger logger = LoggerFactory.getLogger(Encoder.class);
     /**
      * Constructs a new instance of {@code Decoder} with the given block. Use this constructor if
      * you are planning to use pre-trained embeddings that don't need further training.
@@ -59,7 +62,10 @@ public abstract class Decoder extends AbstractBlock {
     @Override
     public NDList forward(
             ParameterStore parameterStore, NDList inputs, PairList<String, Object> params) {
-        return block.forward(parameterStore, inputs, params);
+        long start = System.currentTimeMillis();
+        NDList ret = block.forward(parameterStore, inputs, params);
+        //logger.info("Decoder forward={}ms", System.currentTimeMillis() - start);
+        return ret;
     }
 
     /** {@inheritDoc} */

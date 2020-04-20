@@ -18,8 +18,11 @@ import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.testing.Assertions;
 import ai.djl.training.loss.Loss;
+import ai.djl.training.loss.MaskedSoftmaxCrossEntropyLoss;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.util.Arrays;
 
 public class LossTest {
 
@@ -75,6 +78,19 @@ public class LossTest {
                             .evaluate(new NDList(label), new NDList(pred))
                             .getFloat(),
                     0.10272846f);
+        }
+    }
+
+    @Test
+    public void maskedSoftmaxCrossEntropyLossTest() {
+        try (NDManager manager = NDManager.newBaseManager()) {
+            NDArray pred = manager.ones(new Shape(3, 4, 10));
+            NDArray label = manager.ones(new Shape(3, 4));
+            NDArray validLengths = manager.create(new int[] {4, 2, 0});
+            Assertions.assertAlmostEquals(
+                    Loss.maskedSoftmaxCrossEntropyLoss()
+                            .evaluate(new NDList(label, validLengths), new NDList(pred)),
+                    manager.create(new float[] {2.3025851f, 1.1512926f, 0}).reshape(3, 1));
         }
     }
 }

@@ -71,6 +71,12 @@ public class MockTrainer implements Trainer {
 
     /** {@inheritDoc} */
     @Override
+    public NDList predict(NDList input) {
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void validateBatch(Batch batch) {}
 
     /** {@inheritDoc} */

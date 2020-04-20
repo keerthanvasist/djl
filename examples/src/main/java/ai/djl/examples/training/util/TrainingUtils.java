@@ -16,6 +16,9 @@ import ai.djl.Model;
 import ai.djl.training.Trainer;
 import ai.djl.training.dataset.Batch;
 import ai.djl.training.dataset.Dataset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.file.Paths;
 
@@ -31,10 +34,27 @@ public final class TrainingUtils {
             String outputDir,
             String modelName)
             throws IOException {
+        Logger logger = LoggerFactory.getLogger(TrainingUtils.class);
+        long averageLoad = 0;
+        long averageBatch = 0;
+        long averageSplit = 0;
+        long time = System.nanoTime();
+        int i = 1;
         for (int epoch = 0; epoch < numEpoch; epoch++) {
             for (Batch batch : trainer.iterateDataset(trainingDataset)) {
+                averageLoad = (averageLoad * (i-1) + System.nanoTime() - time)/i;
+                logger.info("Train load={}", averageLoad);
+                time = System.nanoTime();
                 trainer.trainBatch(batch);
+                averageBatch = (averageBatch * (i-1) + System.nanoTime() - time)/i;
+                logger.info("Train batch={}", averageBatch);
+                time = System.nanoTime();
                 trainer.step();
+                averageSplit = (averageSplit * (i-1) + System.nanoTime() - time)/i;
+                logger.info("Train step={}", averageSplit);
+                i++;
+                time = System.nanoTime();
+                //logger.info("\nBatch time={}", trainer.getMetrics().getMetric("train"));
                 batch.close();
             }
 

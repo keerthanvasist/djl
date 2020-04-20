@@ -248,10 +248,10 @@ public final class Utils {
                 logger.warn("{}", array.get(i));
             }
         }
-        logger.debug("{} sum: {}", prefix, array.sum().getFloat());
-        logger.debug("{} mean: {}", prefix, array.mean().getFloat());
-        logger.debug("{} max: {}", prefix, array.max().getFloat());
-        logger.debug("{} min: {}", prefix, array.min().getFloat());
-        logger.debug("{} shape: {}", prefix, array.getShape().toString());
+        logger.info("{} sum: {}", prefix, array.sum().getFloat());
+        logger.info("{} mean: {}", prefix, array.mean().getFloat());
+        logger.info("{} max: {}", prefix, array.max().getFloat());
+        logger.info("{} min: {}", prefix, array.min().getFloat());
+        logger.info("{} shape: {}", prefix, array.getShape().toString());
     }
 }

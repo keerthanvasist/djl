@@ -103,6 +103,7 @@ public class LSTM extends RecurrentBlock {
         NDList result = new NDList(output.head().transpose(1, 0, 2));
         if (stateOutputs) {
             result.add(output.get(1));
+            result.add(output.get(2));
         }
         resetBeginState();
         return result;

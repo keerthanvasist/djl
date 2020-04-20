@@ -101,9 +101,9 @@ public class TrainableWordEmbedding extends Embedding<String> implements WordEmb
 
     /** {@inheritDoc} */
     @Override
-    public String unembedWord(NDArray word) throws EmbeddingException {
-        if (!word.isScalar()) {
-            throw new EmbeddingException("NDArray word must be scalar index");
+    public String unembedWord(NDArray word) {
+        if (!word.isScalar() && word.getShape().size() > 1) {
+            throw new IllegalArgumentException("NDArray word must be scalar index");
         }
         return unembed(word.toIntArray()[0]).orElseGet(() -> unknownToken);
     }
