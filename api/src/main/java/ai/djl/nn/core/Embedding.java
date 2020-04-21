@@ -265,12 +265,11 @@ public abstract class Embedding<T> extends ParameterBlock {
     /**
      * Embeds an item.
      *
-     * @param manager the manager for the new embedding
      * @param item the item to embed
      * @return the embedding {@link NDArray} of Shape()
      */
-    public NDArray embed(NDManager manager, T item) {
-        return manager.create(embedHelper(item));
+    public int embed(T item) {
+        return embedHelper(item);
     }
 
     /**

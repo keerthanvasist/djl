@@ -41,7 +41,8 @@ public class SimpleVocabulary implements Vocabulary {
         unknownToken = builder.unknownToken;
         reservedTokens.add(unknownToken);
         for (String token : reservedTokens) {
-            tokens.put(token, new TokenInfo(Integer.MAX_VALUE));
+            indexToToken.add(token);
+            tokens.put(token, new TokenInfo(indexToToken.size() - 1, Integer.MAX_VALUE));
         }
         for (List<String> sentence : builder.sentences) {
             addAllTokens(sentence);
@@ -73,7 +74,10 @@ public class SimpleVocabulary implements Vocabulary {
      * @return whether the given token is a known word
      */
     public boolean isKnownToken(String token) {
-        return tokens.containsKey(token);
+        if (!tokens.containsKey(token)) {
+            return false;
+        }
+        return tokens.get(token).frequency >= minFrequency;
     }
 
     /**
@@ -215,8 +219,9 @@ public class SimpleVocabulary implements Vocabulary {
 
         public TokenInfo() {}
 
-        public TokenInfo(int index) {
+        public TokenInfo(int index, int frequency) {
             this.index = index;
+            this.frequency = frequency;
         }
     }
 }

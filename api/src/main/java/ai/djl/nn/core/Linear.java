@@ -38,7 +38,7 @@ import java.util.List;
  *
  * <p>It has the following shapes:
  *
- * <p>If {@code flatten} is false:
+ * <p>If {@code flatten} is true:
  *
  * <ul>
  *   <li>input X: [batchSize, x1, x2, …, xn]

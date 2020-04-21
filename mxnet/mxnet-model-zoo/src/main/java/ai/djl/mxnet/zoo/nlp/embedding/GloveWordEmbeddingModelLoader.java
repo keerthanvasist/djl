@@ -144,9 +144,9 @@ public class GloveWordEmbeddingModelLoader extends BaseModelLoader<NDList, NDLis
         @Override
         public NDList processInput(TranslatorContext ctx, String input) throws Exception {
             if (embedding.hasItem(input)) {
-                return new NDList(embedding.embed(ctx.getNDManager(), input));
+                return new NDList(ctx.getNDManager().create(embedding.embed(input)));
             } else {
-                return new NDList(embedding.embed(ctx.getNDManager(), unknownToken));
+                return new NDList(ctx.getNDManager().create(embedding.embed(unknownToken)));
             }
         }
     }
