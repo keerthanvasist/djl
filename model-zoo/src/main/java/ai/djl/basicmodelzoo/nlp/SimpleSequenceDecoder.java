@@ -25,6 +25,9 @@ import ai.djl.nn.core.Linear;
 import ai.djl.nn.recurrent.RecurrentBlock;
 import ai.djl.training.ParameterStore;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * {@code SimpleSequenceDecoder} implements a {@link Decoder} that employs a {@link RecurrentBlock}
  * to decode text input.
@@ -32,8 +35,8 @@ import ai.djl.training.ParameterStore;
 public class SimpleSequenceDecoder extends Decoder {
     private RecurrentBlock recurrentBlock;
     private TrainableTextEmbedding trainableTextEmbedding;
-    private String eosToken;
     private String bosToken;
+    private String eosToken;
 
     /**
      * Contructs a new instance of {@code SimpleSequenceDecoder} with the given {@link
@@ -44,8 +47,8 @@ public class SimpleSequenceDecoder extends Decoder {
      * @param vocabSize the size of the {@link ai.djl.modality.nlp.Vocabulary}
      */
     public SimpleSequenceDecoder(
-            RecurrentBlock recurrentBlock, int vocabSize, String eosToken, String bosToken) {
-        this(null, recurrentBlock, vocabSize, eosToken, bosToken);
+            RecurrentBlock recurrentBlock, int vocabSize,  String bosToken, String eosToken) {
+        this(null, recurrentBlock, vocabSize, bosToken, eosToken);
     }
 
     /**
@@ -61,13 +64,13 @@ public class SimpleSequenceDecoder extends Decoder {
             TrainableTextEmbedding trainableTextEmbedding,
             RecurrentBlock recurrentBlock,
             int vocabSize,
-            String eosToken,
-            String bosToken) {
+            String bosToken,
+            String eosToken) {
         super(getBlock(trainableTextEmbedding, recurrentBlock, vocabSize));
         this.recurrentBlock = recurrentBlock;
         this.trainableTextEmbedding = trainableTextEmbedding;
-        this.eosToken = eosToken;
         this.bosToken = bosToken;
+        this.eosToken = eosToken;
     }
 
     private static Block getBlock(
@@ -84,36 +87,25 @@ public class SimpleSequenceDecoder extends Decoder {
 
     /** {@inheritDoc} */
     @Override
-    public void initState(NDArray encoderState) {
-        recurrentBlock.setBeginState(encoderState);
+    public void initState(NDList encoderState) {
+        recurrentBlock.setBeginStates(encoderState);
     }
 
     /** {@inheritDoc} */
     @Override
     public NDList predict(ParameterStore parameterStore, NDList inputs) {
         Shape inputShape = inputs.get(0).getShape();
-        if (inputShape.get(0) != 1 && inputShape.get(1) != 1) {
+        if (inputShape.get(1) != 1) {
             throw new IllegalArgumentException(
-                    "Input to predict must be of shape (1, 1, <embeddingSize>");
+                    "Input sequence length must be 1 during prediction");
         }
-        String token = eosToken;
         NDList output = new NDList();
-        int i = 0;
-        while (!token.equals(bosToken) && i < 10) {
-            NDList outputList = forward(parameterStore, inputs);
-            // System.out.println(outputList.head().getShape());
-            // System.out.println("Input to TextEmbedding" +
-            // outputList.head().argMax(2).getShape());
-            token =
-                    trainableTextEmbedding
-                            .unembedText(outputList.head().argMax(2).toType(DataType.INT32, false))
-                            .get(0);
-            System.out.print(token + " ");
-            inputs = new NDList(outputList.head().argMax(2));
-            output.add(outputList.singletonOrThrow().argMax(2));
-            i++;
+        for (int i = 0; i < 10; i++) {
+            inputs = block.predict(parameterStore, inputs);
+            inputs = new NDList(inputs.head().argMax(2));
+            output.add(inputs.head().transpose(1, 0));
         }
-        System.out.println();
-        return new NDList(NDArrays.concat(output, 1));
+        NDList ret = new NDList(NDArrays.stack(output).transpose(2, 1, 0));
+        return new NDList(NDArrays.stack(output).transpose(2, 1, 0));
     }
 }

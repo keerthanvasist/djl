@@ -40,10 +40,6 @@ public class SimpleVocabulary implements Vocabulary {
         minFrequency = builder.minFrequency;
         unknownToken = builder.unknownToken;
         reservedTokens.add(unknownToken);
-        for (String token : reservedTokens) {
-            indexToToken.add(token);
-            tokens.put(token, new TokenInfo(indexToToken.size() - 1, Integer.MAX_VALUE));
-        }
         for (List<String> sentence : builder.sentences) {
             addAllTokens(sentence);
         }
@@ -74,6 +70,9 @@ public class SimpleVocabulary implements Vocabulary {
      * @return whether the given token is a known word
      */
     public boolean isKnownToken(String token) {
+        if (reservedTokens.contains(token)) {
+            return true;
+        }
         if (!tokens.containsKey(token)) {
             return false;
         }
@@ -108,8 +107,13 @@ public class SimpleVocabulary implements Vocabulary {
      *
      * @return the token corresponding to the given index
      */
-    public Set<String> getAllTokens() {
-        return new HashSet<>(indexToToken);
+    public List<String> getAllTokens() {
+        Set<String> tokenSet = new HashSet<>(indexToToken);
+        List<String> tokenList = new ArrayList<>();
+        tokenList.addAll(reservedTokens);
+        tokenSet.removeAll(reservedTokens);
+        tokenList.addAll(tokenSet);
+        return tokenList;
     }
 
     /**

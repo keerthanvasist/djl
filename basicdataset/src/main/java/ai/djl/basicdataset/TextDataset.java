@@ -20,6 +20,7 @@ import ai.djl.modality.nlp.Vocabulary;
 import ai.djl.modality.nlp.embedding.EmbeddingException;
 import ai.djl.modality.nlp.embedding.TextEmbedding;
 import ai.djl.modality.nlp.embedding.TrainableWordEmbedding;
+import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
 import ai.djl.training.dataset.RandomAccessDataset;
 import java.util.List;
@@ -81,6 +82,17 @@ public abstract class TextDataset extends RandomAccessDataset {
     }
 
     /**
+     * Gets the tokens for the given index of the text input.
+     *
+     * @param index the index of the text input
+     * @return the {@link NDArray} containing the text embedding
+     */
+    public String getRawText(long index, boolean source) {
+        TextData textData = source ? sourceTextData : targetTextData;
+        return textData.getRawText(index);
+    }
+
+    /**
      * Performs pre-processing steps on text data such as tokenising, applying {@link
      * ai.djl.modality.nlp.preprocess.TextProcessor}s, creating vocabulary, and word embeddings.
      *
@@ -90,7 +102,7 @@ public abstract class TextDataset extends RandomAccessDataset {
      */
     protected void preprocess(List<String> newTextData, boolean source) throws EmbeddingException {
         TextData textData = source ? sourceTextData : targetTextData;
-        textData.preprocess(manager, newTextData);
+        textData.preprocess(manager, newTextData.subList(0,(int)Math.min(limit, newTextData.size())));
     }
 
     /** Abstract Builder that helps build a {@link TextDataset}. */

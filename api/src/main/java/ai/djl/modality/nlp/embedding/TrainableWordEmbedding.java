@@ -51,7 +51,8 @@ public class TrainableWordEmbedding extends Embedding<String> implements WordEmb
                 builder()
                         .setEmbeddingSize(embeddingSize)
                         .setItems(new ArrayList<>(simpleVocabulary.getAllTokens()))
-                        .optSparseGrad(false));
+                        .optSparseGrad(false)
+                        .optUseDefault(false));
         this.unknownToken = simpleVocabulary.getUnknownToken();
     }
 
@@ -88,7 +89,11 @@ public class TrainableWordEmbedding extends Embedding<String> implements WordEmb
     @Override
     public int preprocessWordToEmbed(String word) {
         if (hasItem(word)) {
-            return embed(word);
+            try {
+                return embed(word);
+            } catch (IllegalArgumentException e) {
+                return embed(unknownToken);
+            }
         }
         return embed(unknownToken);
     }

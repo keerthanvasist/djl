@@ -27,6 +27,7 @@ import ai.djl.util.PairList;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -51,9 +52,9 @@ public abstract class Decoder extends AbstractBlock {
     /**
      * Sets the state of the encoder as the initial state of the decoder.
      *
-     * @param encoderState the state of the encoder
+     * @param encoderOutputs the state of the encoder
      */
-    public abstract void initState(NDArray encoderState);
+    public abstract void initState(NDList encoderOutputs);
 
     /** {@inheritDoc} */
     @Override
@@ -72,7 +73,7 @@ public abstract class Decoder extends AbstractBlock {
     /** {@inheritDoc} */
     @Override
     public BlockList getChildren() {
-        return block.getChildren();
+        return new BlockList(Collections.singletonList("Block"), Collections.singletonList(block));
     }
 
     /** {@inheritDoc} */

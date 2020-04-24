@@ -53,7 +53,7 @@ public abstract class Encoder extends AbstractBlock {
      * @param encoderOutput an {@link NDList} that contains the encoder output
      * @return the state of the encoder
      */
-    public abstract NDArray getState(NDList encoderOutput);
+    public abstract NDList getStates(NDList encoderOutput);
 
     /** {@inheritDoc} */
     @Override
@@ -72,7 +72,7 @@ public abstract class Encoder extends AbstractBlock {
     /** {@inheritDoc} */
     @Override
     public BlockList getChildren() {
-        return block.getChildren();
+        return new BlockList(Collections.singletonList("Block"), Collections.singletonList(block));
     }
 
     /** {@inheritDoc} */

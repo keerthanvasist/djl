@@ -23,7 +23,6 @@ import java.util.function.Function;
  * Optimizer} is an abstract class that provides the base implementation for optimizers.
  */
 public abstract class Optimizer {
-
     protected float rescaleGrad;
     protected float clipGrad;
     private float weightDecays;
@@ -89,6 +88,15 @@ public abstract class Optimizer {
                         parameterId, (key, val) -> (val == null) ? beginNumUpdate + 1 : val + 1);
         numUpdate = Math.max(numUpdate, count);
         return numUpdate;
+    }
+
+    /**
+     * Sets the value of rescale grad to the given value.
+     *
+     * @param rescaleGrad the new value of rescale grad
+     */
+    public void setRescaleGrad(float rescaleGrad) {
+        this.rescaleGrad = rescaleGrad;
     }
 
     /**

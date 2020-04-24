@@ -77,7 +77,7 @@ public class EncoderDecoder extends AbstractBlock {
             NDList decoderInputs,
             PairList<String, Object> params) {
         NDList encoderOutputs = encoder.forward(parameterStore, encoderInputs, params);
-        decoder.initState(encoder.getState(encoderOutputs));
+        decoder.initState(encoder.getStates(encoderOutputs));
         return decoder.forward(parameterStore, decoderInputs, params);
     }
 
@@ -124,7 +124,7 @@ public class EncoderDecoder extends AbstractBlock {
     @Override
     public NDList predict(ParameterStore parameterStore, NDList inputs) {
         NDList encoderOutputs = encoder.forward(parameterStore, new NDList(inputs.get(0)), null);
-        decoder.initState(encoder.getState(encoderOutputs));
+        decoder.initState(encoder.getStates(encoderOutputs));
         return decoder.predict(parameterStore, new NDList(inputs.get(1)));
     }
 
@@ -149,9 +149,7 @@ public class EncoderDecoder extends AbstractBlock {
     /** {@inheritDoc} */
     @Override
     public BlockList getChildren() {
-        BlockList children = encoder.getChildren();
-        children.addAll(decoder.getChildren());
-        return children;
+        return new BlockList(Arrays.asList("Encoder", "Decoder"), Arrays.asList(encoder, decoder));
     }
 
     /** {@inheritDoc} */

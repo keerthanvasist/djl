@@ -21,8 +21,10 @@ import ai.djl.modality.nlp.preprocess.LowerCaseConvertor;
 import ai.djl.modality.nlp.preprocess.PunctuationSeparator;
 import ai.djl.modality.nlp.preprocess.SimpleTokenizer;
 import ai.djl.modality.nlp.preprocess.TextProcessor;
+import ai.djl.modality.nlp.preprocess.TextTruncator;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +40,7 @@ import java.util.Locale;
 public class TextData {
 
     private List<NDArray> textEmbeddingList;
+    private List<String> rawText;
     private List<TextProcessor> textProcessors;
     private List<String> reservedTokens;
     private TextEmbedding textEmbedding;
@@ -71,7 +74,8 @@ public class TextData {
                 Arrays.asList(
                         new SimpleTokenizer(),
                         new LowerCaseConvertor(Locale.ENGLISH),
-                        new PunctuationSeparator());
+                        new PunctuationSeparator(),
+                        new TextTruncator(10));
 
         return new TextData.Configuration()
                 .setEmbeddingSize(15)
@@ -89,12 +93,12 @@ public class TextData {
      * @throws EmbeddingException if there was an error while fetching the embedding
      */
     public void preprocess(NDManager manager, List<String> newTextData) throws EmbeddingException {
+        rawText = newTextData;
         SimpleVocabulary.VocabularyBuilder vocabularyBuilder =
                 new SimpleVocabulary.VocabularyBuilder();
-        vocabularyBuilder.optMinFrequency(3);
-        vocabularyBuilder.optReservedTokens(reservedTokens);
-        vocabularyBuilder.optUnknownToken(unknownToken);
-
+        vocabularyBuilder.optMinFrequency(3)
+                .optReservedTokens(reservedTokens)
+                .optUnknownToken(unknownToken);
         List<List<String>> textData = new ArrayList<>();
         for (String textDatum : newTextData) {
             List<String> tokens = Collections.singletonList(textDatum);
@@ -189,6 +193,16 @@ public class TextData {
         NDArray embedding = textEmbeddingList.get(Math.toIntExact(index)).duplicate();
         embedding.attach(manager);
         return embedding;
+    }
+
+    /**
+     * Gets the tokens for the given index of the text input.
+     *
+     * @param index the index of the text input
+     * @return the {@link NDArray} containing the text embedding
+     */
+    public String getRawText(long index) {
+       return rawText.get(Math.toIntExact(index));
     }
 
     /**

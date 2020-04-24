@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import ai.djl.training.optimizer.Optimizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +71,9 @@ public class Trainer implements AutoCloseable {
     private List<Evaluator> evaluators;
     private Loss loss;
     private DataManager dataManager;
+    private Optimizer optimizer;
     long batchBeginTime;
+    int i = 0;
 
     private boolean gradientsChecked;
 
@@ -86,6 +90,7 @@ public class Trainer implements AutoCloseable {
         devices = trainingConfig.getDevices();
         loss = trainingConfig.getLossFunction();
         dataManager = trainingConfig.getDataManager();
+        optimizer = trainingConfig.getOptimizer();
         if (loss == null) {
             throw new IllegalArgumentException("You must specify a loss for the trainer");
         }
@@ -93,7 +98,7 @@ public class Trainer implements AutoCloseable {
         evaluators.add(loss); // track loss as an evaluator by default
 
         // ParameterServer parameterServer = new MxParameterServer(trainingConfig.getOptimizer());
-        ParameterServer parameterServer = new LocalParameterServer(trainingConfig.getOptimizer());
+        ParameterServer parameterServer = new LocalParameterServer(optimizer);
 
         parameterStore = new ParameterStore(manager, false);
         parameterStore.setParameterServer(parameterServer, devices);
@@ -146,6 +151,7 @@ public class Trainer implements AutoCloseable {
      * @throws IllegalArgumentException if the batch engine does not match the trainer engine
      */
     public void trainBatch(Batch batch) {
+        i++;
         if (manager.getEngine() != batch.getManager().getEngine()) {
             throw new IllegalArgumentException(
                     "The data must be on the same engine as the trainer. You may need to change one of your NDManagers.");
@@ -161,6 +167,13 @@ public class Trainer implements AutoCloseable {
                 long time = System.nanoTime();
                 NDArray lossValue = loss.evaluate(labels, preds);
                 collector.backward(lossValue);
+                /*if (i > 200 && i%10 == 0) {
+                    if (i > 200 * 64 && i % 320 == 0) {
+                        predict(new NDList(data.head().get(0).reshape(1, 10), labels.head().get(0, 0).reshape(new Shape(1, 1))));
+                    }
+                    System.out.println("Labels: " + Arrays.toString(labels.head().get(0).toIntArray()));
+                    System.out.println("Preds : " + Arrays.toString(preds.head().argMax(2).get(0).toLongArray()));
+                }*/
                 addMetric("backward", time);
                 time = System.nanoTime();
                 batchData.getLabels().put(labels.get(0).getDevice(), labels);

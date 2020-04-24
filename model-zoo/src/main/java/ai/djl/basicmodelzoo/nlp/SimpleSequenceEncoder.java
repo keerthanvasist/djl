@@ -52,7 +52,7 @@ public class SimpleSequenceEncoder extends Encoder {
 
     /** {@inheritDoc} */
     @Override
-    public NDArray getState(NDList encoderOutput) {
-        return encoderOutput.get(1);
+    public NDList getStates(NDList encoderOutput) {
+        return new NDList(encoderOutput.get(1), encoderOutput.get(2));
     }
 }
