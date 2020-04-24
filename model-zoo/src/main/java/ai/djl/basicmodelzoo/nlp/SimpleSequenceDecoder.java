@@ -14,7 +14,7 @@ package ai.djl.basicmodelzoo.nlp;
 
 import ai.djl.modality.nlp.Decoder;
 import ai.djl.modality.nlp.embedding.TrainableTextEmbedding;
-import ai.djl.ndarray.NDArray;
+import ai.djl.ndarray.NDList;
 import ai.djl.nn.Block;
 import ai.djl.nn.SequentialBlock;
 import ai.djl.nn.core.Linear;
@@ -70,7 +70,7 @@ public class SimpleSequenceDecoder extends Decoder {
 
     /** {@inheritDoc} */
     @Override
-    public void initState(NDArray encoderState) {
-        recurrentBlock.setBeginState(encoderState);
+    public void initState(NDList encoderStates) {
+        recurrentBlock.setBeginStates(encoderStates);
     }
 }

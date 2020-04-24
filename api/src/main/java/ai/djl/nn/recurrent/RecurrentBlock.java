@@ -148,20 +148,20 @@ public abstract class RecurrentBlock extends ParameterBlock {
         if (stateOutputs) {
             result.add(output.get(1));
         }
-        resetBeginState();
+        resetBeginStates();
         return result;
     }
 
     /**
-     * Sets the initial {@link NDArray} value for the hidden state.
+     * Sets the initial {@link NDArray} value for the hidden states.
      *
-     * @param beginState the {@link NDArray} value for the hidden state
+     * @param beginStates the {@link NDArray} value for the hidden states
      */
-    public void setBeginState(NDArray beginState) {
-        this.beginState = beginState;
+    public void setBeginStates(NDList beginStates) {
+        this.beginState = beginStates.get(0);
     }
 
-    protected void resetBeginState() {
+    protected void resetBeginStates() {
         beginState = null;
     }
 
