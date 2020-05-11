@@ -229,7 +229,7 @@ public class Linear extends ParameterBlock {
     /** The Builder to construct a {@link Linear} type of {@link Block}. */
     public static final class Builder {
 
-        private long outChannels;
+        private long outChannels = -1;
         private boolean bias = true;
         private boolean flatten;
 
@@ -281,7 +281,7 @@ public class Linear extends ParameterBlock {
          *     set
          */
         public Linear build() {
-            if (outChannels == 0) {
+            if (outChannels < 0) {
                 throw new IllegalArgumentException("You must specify outChannels");
             }
             return new Linear(this);
