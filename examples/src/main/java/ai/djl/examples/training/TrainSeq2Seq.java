@@ -20,6 +20,7 @@ import ai.djl.basicdataset.utils.TextData.Configuration;
 import ai.djl.basicmodelzoo.nlp.SimpleTextDecoder;
 import ai.djl.basicmodelzoo.nlp.SimpleTextEncoder;
 import ai.djl.examples.training.util.Arguments;
+import ai.djl.inference.Predictor;
 import ai.djl.metric.Metrics;
 import ai.djl.modality.nlp.EncoderDecoder;
 import ai.djl.modality.nlp.embedding.TextEmbedding;
@@ -29,6 +30,7 @@ import ai.djl.modality.nlp.preprocess.PunctuationSeparator;
 import ai.djl.modality.nlp.preprocess.SimpleTokenizer;
 import ai.djl.modality.nlp.preprocess.TextTerminator;
 import ai.djl.modality.nlp.preprocess.TextTruncator;
+import ai.djl.modality.nlp.translator.SimpleText2TextTranslator;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.index.NDIndex;
@@ -43,7 +45,7 @@ import ai.djl.training.TrainingResult;
 import ai.djl.training.dataset.Batch;
 import ai.djl.training.dataset.Dataset;
 import ai.djl.training.evaluator.Accuracy;
-import ai.djl.training.initializer.XavierInitializer;
+import ai.djl.training.initializer.Initializer;
 import ai.djl.training.listener.TrainingListener;
 import ai.djl.training.loss.MaskedSoftmaxCrossEntropyLoss;
 import ai.djl.training.optimizer.Adam;
@@ -53,13 +55,18 @@ import ai.djl.translate.PaddingStackBatchifier;
 import ai.djl.translate.TranslateException;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.cli.ParseException;
 
 public final class TrainSeq2Seq {
+    private static TrainableTextEmbedding sourceEmbedding;
+    private static TrainableTextEmbedding targetEmbedding;
+
     private TrainSeq2Seq() {}
 
     public static void main(String[] args) throws IOException, ParseException, TranslateException {
@@ -75,9 +82,9 @@ public final class TrainSeq2Seq {
             TextDataset trainingSet =
                     getDataset(Dataset.Usage.TRAIN, arguments, executorService, null, null);
             // Fetch TextEmbedding from dataset
-            TrainableTextEmbedding sourceEmbedding =
+            sourceEmbedding =
                     (TrainableTextEmbedding) trainingSet.getTextEmbedding(true);
-            TrainableTextEmbedding targetEmbedding =
+            targetEmbedding =
                     (TrainableTextEmbedding) trainingSet.getTextEmbedding(false);
 
             // Validate must use the same embedding as training
@@ -120,6 +127,14 @@ public final class TrainSeq2Seq {
                 model.setProperty("Epoch", String.valueOf(result.getEpoch()));
                 model.setProperty("Loss", String.format("%.5f", result.getValidateLoss()));
                 model.save(Paths.get(arguments.getOutputDir()), "seq2seqMTEn-Fr");
+
+                List<String> englishSentences = Arrays.asList("Go .", "Wow !", "I'm OK .", "I won !");
+                List<String> frenchSentences = new ArrayList<>();
+                try (Predictor<String, String> predictor =
+                             model.newPredictor(new SimpleText2TextTranslator())) {
+                        frenchSentences.addAll(predictor.batchPredict(englishSentences));
+                }
+                System.out.println("French sentences: " + frenchSentences);
                 return result;
             } finally {
                 executorService.shutdownNow();
@@ -154,7 +169,6 @@ public final class TrainSeq2Seq {
     public static DefaultTrainingConfig setupTrainingConfig(Arguments arguments) {
         return new DefaultTrainingConfig(new MaskedSoftmaxCrossEntropyLoss())
                 .addEvaluator(new Accuracy("Accuracy", 0, 2))
-                .optInitializer(new XavierInitializer())
                 .optOptimizer(
                         Adam.builder()
                                 .optLearningRateTracker(
@@ -232,6 +246,8 @@ public final class TrainSeq2Seq {
             data.add(batch.getData().head());
             NDArray target = batch.getLabels().head().get(new NDIndex(":, :-1"));
             data.add(target);
+            System.out.println(sourceEmbedding.unembedText(batch.getData().head().get(0)));
+            System.out.println(targetEmbedding.unembedText(target.get(0)));
             return data;
         }
 

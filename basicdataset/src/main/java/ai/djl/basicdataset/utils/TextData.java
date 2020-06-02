@@ -89,7 +89,7 @@ public class TextData {
         SimpleVocabulary.VocabularyBuilder vocabularyBuilder =
                 new SimpleVocabulary.VocabularyBuilder();
         vocabularyBuilder
-                .optMinFrequency(3)
+                .optMinFrequency(1)
                 .optReservedTokens(reservedTokens)
                 .optUnknownToken(unknownToken);
         List<List<String>> textData = new ArrayList<>();
