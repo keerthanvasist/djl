@@ -18,6 +18,8 @@ import ai.djl.training.dataset.Batch;
 import ai.djl.training.dataset.Dataset;
 import ai.djl.training.listener.TrainingListener.BatchData;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /** Helper for easy training of a whole model, a trainining batch, or a validation batch. */
 public final class EasyTrain {
@@ -36,7 +38,12 @@ public final class EasyTrain {
             Trainer trainer, int numEpoch, Dataset trainingDataset, Dataset validateDataset) {
         for (int epoch = 0; epoch < numEpoch; epoch++) {
             for (Batch batch : trainer.iterateDataset(trainingDataset)) {
-                trainBatch(trainer, batch);
+                try {
+                    trainBatch(trainer, batch);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return;
+                }
                 trainer.step();
                 batch.close();
             }
@@ -59,7 +66,7 @@ public final class EasyTrain {
      * @param batch a {@link Batch} that contains data, and its respective labels
      * @throws IllegalArgumentException if the batch engine does not match the trainer engine
      */
-    public static void trainBatch(Trainer trainer, Batch batch) {
+    public static void trainBatch(Trainer trainer, Batch batch) throws InterruptedException {
         if (trainer.getManager().getEngine() != batch.getManager().getEngine()) {
             throw new IllegalArgumentException(
                     "The data must be on the same engine as the trainer. You may need to change one of your NDManagers.");
@@ -67,22 +74,25 @@ public final class EasyTrain {
         Batch[] splits = batch.split(trainer.getDevices(), false);
         BatchData batchData =
                 new BatchData(batch, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
-        try (GradientCollector collector = trainer.newGradientCollector()) {
-            for (Batch split : splits) {
-                NDList data = trainer.getDataManager().getData(split);
-                NDList labels = trainer.getDataManager().getLabels(split);
-                NDList preds = trainer.forward(data);
-                long time = System.nanoTime();
-                NDArray lossValue = trainer.getLoss().evaluate(labels, preds);
-                collector.backward(lossValue);
-                trainer.addMetric("backward", time);
-                time = System.nanoTime();
-                batchData.getLabels().put(labels.get(0).getDevice(), labels);
-                batchData.getPredictions().put(preds.get(0).getDevice(), preds);
-                trainer.addMetric("training-metrics", time);
+        ExecutorService executorService = Executors.newFixedThreadPool(splits.length);
+        executorService.execute(() -> {
+            try (GradientCollector collector = trainer.newGradientCollector()) {
+                for (Batch split : splits) {
+                    NDList data = trainer.getDataManager().getData(split);
+                    NDList labels = trainer.getDataManager().getLabels(split);
+                    NDList preds = trainer.forward(data);
+                    long time = System.nanoTime();
+                    NDArray lossValue = trainer.getLoss().evaluate(labels, preds);
+                    collector.backward(lossValue);
+                    trainer.addMetric("backward", time);
+                    time = System.nanoTime();
+                    batchData.getLabels().put(labels.get(0).getDevice(), labels);
+                    batchData.getPredictions().put(preds.get(0).getDevice(), preds);
+                    trainer.addMetric("training-metrics", time);
+                }
             }
-        }
-
+        });
+        executorService.wait();
         trainer.notifyListeners(listener -> listener.onTrainingBatch(trainer, batchData));
     }
 
