@@ -13,6 +13,7 @@
 package ai.djl.training.dataset;
 
 import ai.djl.Device;
+import ai.djl.ndarray.LazyNDArray;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
 import ai.djl.translate.Batchifier;
@@ -171,6 +172,7 @@ public class Batch implements AutoCloseable {
     /** {@inheritDoc} */
     @Override
     public void close() {
+        ((LazyNDArray) data.head()).waitAll();
         manager.close();
         manager = null;
     }

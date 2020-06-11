@@ -17,6 +17,7 @@ import ai.djl.ndarray.NDList;
 import ai.djl.training.dataset.Batch;
 import ai.djl.training.dataset.Dataset;
 import ai.djl.training.listener.TrainingListener.BatchData;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Helper for easy training of a whole model, a trainining batch, or a validation batch. */
@@ -67,22 +68,24 @@ public final class EasyTrain {
         Batch[] splits = batch.split(trainer.getDevices(), false);
         BatchData batchData =
                 new BatchData(batch, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
-        try (GradientCollector collector = trainer.newGradientCollector()) {
-            for (Batch split : splits) {
-                NDList data = trainer.getDataManager().getData(split);
-                NDList labels = trainer.getDataManager().getLabels(split);
-                NDList preds = trainer.forward(data);
-                long time = System.nanoTime();
-                NDArray lossValue = trainer.getLoss().evaluate(labels, preds);
-                collector.backward(lossValue);
-                trainer.addMetric("backward", time);
-                time = System.nanoTime();
-                batchData.getLabels().put(labels.get(0).getDevice(), labels);
-                batchData.getPredictions().put(preds.get(0).getDevice(), preds);
-                trainer.addMetric("training-metrics", time);
-            }
-        }
-
+        Arrays.stream(splits)
+                .parallel()
+                .forEach(
+                        split -> {
+                            try (GradientCollector collector = trainer.newGradientCollector()) {
+                                NDList data = trainer.getDataManager().getData(split);
+                                NDList labels = trainer.getDataManager().getLabels(split);
+                                NDList preds = trainer.forward(data);
+                                long time = System.nanoTime();
+                                NDArray lossValue = trainer.getLoss().evaluate(labels, preds);
+                                collector.backward(lossValue);
+                                trainer.addMetric("backward", time);
+                                time = System.nanoTime();
+                                batchData.getLabels().put(labels.get(0).getDevice(), labels);
+                                batchData.getPredictions().put(preds.get(0).getDevice(), preds);
+                                trainer.addMetric("training-metrics", time);
+                            }
+                        });
         trainer.notifyListeners(listener -> listener.onTrainingBatch(trainer, batchData));
     }
 

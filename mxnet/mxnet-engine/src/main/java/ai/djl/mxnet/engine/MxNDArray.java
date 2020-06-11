@@ -1488,7 +1488,7 @@ public class MxNDArray extends NativeResource implements LazyNDArray {
     /** {@inheritDoc} */
     @Override
     public void waitAll() {
-        JnaUtils.waitToRead(getHandle());
+        JnaUtils.waitAll();
     }
 
     /** {@inheritDoc} */
