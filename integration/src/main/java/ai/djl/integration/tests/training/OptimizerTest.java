@@ -47,15 +47,14 @@ public class OptimizerTest {
                         .build();
 
         Device[] devices = Device.getDevices(1);
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss())
-                        .optInitializer(Initializer.ONES)
-                        .optOptimizer(sgd)
-                        .optDevices(devices);
         Block block = Linear.builder().setOutChannels(CHANNELS).build();
         try (Model model = Model.newInstance("model", devices[0])) {
             model.setBlock(block);
-
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES)
+                            .optOptimizer(sgd)
+                            .optDevices(devices);
             try (Trainer trainer = model.newTrainer(config)) {
                 int batchSize = config.getDevices().length * BATCH_SIZE;
                 trainer.initialize(new Shape(batchSize, CHANNELS));
@@ -79,15 +78,14 @@ public class OptimizerTest {
                         .build();
 
         Device[] devices = Device.getDevices(1);
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss())
-                        .optInitializer(Initializer.ONES)
-                        .optOptimizer(optim)
-                        .optDevices(devices);
         Block block = Linear.builder().setOutChannels(CHANNELS).build();
         try (Model model = Model.newInstance("model", devices[0])) {
             model.setBlock(block);
-
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES)
+                            .optOptimizer(optim)
+                            .optDevices(devices);
             try (Trainer trainer = model.newTrainer(config)) {
                 int batchSize = config.getDevices().length * BATCH_SIZE;
                 trainer.initialize(new Shape(batchSize, CHANNELS));
@@ -119,15 +117,15 @@ public class OptimizerTest {
 
         // Limit to 1 GPU for consist result.
         Device[] devices = Device.getDevices(1);
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss())
-                        .optInitializer(Initializer.ONES)
-                        .optOptimizer(optim)
-                        .optDevices(devices);
         Block block = Linear.builder().setOutChannels(CHANNELS).build();
         try (Model model = Model.newInstance("model", devices[0])) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES)
+                            .optOptimizer(optim)
+                            .optDevices(devices);
             int batchSize = config.getDevices().length * BATCH_SIZE;
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.initialize(new Shape(batchSize, CHANNELS));
@@ -151,15 +149,15 @@ public class OptimizerTest {
                         .build();
 
         Device[] devices = Device.getDevices(1);
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss())
-                        .optInitializer(Initializer.ONES)
-                        .optOptimizer(optim)
-                        .optDevices(devices);
         Block block = Linear.builder().setOutChannels(CHANNELS).build();
         try (Model model = Model.newInstance("model", devices[0])) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES)
+                            .optOptimizer(optim)
+                            .optDevices(devices);
             try (Trainer trainer = model.newTrainer(config)) {
                 int batchSize = config.getDevices().length * BATCH_SIZE;
                 trainer.initialize(new Shape(batchSize, CHANNELS));

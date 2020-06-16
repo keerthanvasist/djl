@@ -28,15 +28,13 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class ActivationTest {
-
-    TrainingConfig config =
-            new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
     @Test
     public void testRelu() {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Activation.reluBlock());
-
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.initialize(new Shape(3));
 
@@ -56,6 +54,9 @@ public class ActivationTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Activation.sigmoidBlock());
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray data = manager.create(new float[] {0});
@@ -73,6 +74,9 @@ public class ActivationTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Activation.tanhBlock());
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray data = manager.create(new float[] {0});
@@ -90,6 +94,9 @@ public class ActivationTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Activation.softreluBlock());
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray data = manager.create(new float[] {0, 0, 2});
@@ -108,6 +115,9 @@ public class ActivationTest {
             float alpha = 1.0f;
             model.setBlock(Activation.leakyReluBlock(alpha));
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray data = manager.create(new float[] {-1, 0, 2});
@@ -126,6 +136,9 @@ public class ActivationTest {
             float alpha = 1.0f;
             model.setBlock(Activation.eluBlock(alpha));
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray data = manager.create(new float[] {0, 2});
@@ -142,6 +155,9 @@ public class ActivationTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Activation.seluBlock());
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray data = manager.create(new float[] {0});
@@ -159,6 +175,9 @@ public class ActivationTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Activation.geluBlock());
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray data = manager.create(new float[] {0});
@@ -177,6 +196,9 @@ public class ActivationTest {
             float beta = 1.0f;
             model.setBlock(Activation.swishBlock(beta));
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray data = manager.create(new float[] {1, 5, 0.3f, 0.08f});
@@ -194,6 +216,9 @@ public class ActivationTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Activation.mishBlock());
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray data = manager.create(new float[] {1, 5, 0.3f, 0.08f});
@@ -211,6 +236,9 @@ public class ActivationTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Activation.preluBlock());
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.initialize(new Shape(3));
                 NDManager manager = trainer.getManager();

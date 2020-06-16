@@ -29,6 +29,7 @@ public class TatoebaEnglishFrenchDatasetTest {
         try (NDManager manager = NDManager.newBaseManager()) {
             TatoebaEnglishFrenchDataset tatoebaEnglishFrenchDataset =
                     TatoebaEnglishFrenchDataset.builder()
+                            .setManager(manager)
                             .setSourceConfiguration(
                                     new Configuration()
                                             .setTextEmbedding(
@@ -54,6 +55,7 @@ public class TatoebaEnglishFrenchDatasetTest {
         try (NDManager manager = NDManager.newBaseManager()) {
             TatoebaEnglishFrenchDataset tatoebaEnglishFrenchDataset =
                     TatoebaEnglishFrenchDataset.builder()
+                            .setManager(manager)
                             .setSourceConfiguration(
                                     new Configuration()
                                             .setTextEmbedding(

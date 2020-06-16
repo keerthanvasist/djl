@@ -14,6 +14,7 @@ package ai.djl.training.loss;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 
 /**
  * {@code SoftmaxCrossEntropyLoss} is a type of {@link Loss} that calculates the softmax cross
@@ -31,23 +32,29 @@ public class SoftmaxCrossEntropyLoss extends Loss {
     private boolean sparseLabel;
     private boolean fromLogit;
 
-    /** Creates a new instance of {@code SoftmaxCrossEntropyLoss} with default parameters. */
-    public SoftmaxCrossEntropyLoss() {
-        this("SoftmaxCrossEntropyLoss");
+    /**
+     * Creates a new instance of {@code SoftmaxCrossEntropyLoss} with default parameters.
+     *
+     * @param manager an {@link NDManager}
+     */
+    public SoftmaxCrossEntropyLoss(NDManager manager) {
+        this(manager, "SoftmaxCrossEntropyLoss");
     }
 
     /**
      * Creates a new instance of {@code SoftmaxCrossEntropyLoss} with default parameters.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      */
-    public SoftmaxCrossEntropyLoss(String name) {
-        this(name, 1, -1, true, false);
+    public SoftmaxCrossEntropyLoss(NDManager manager, String name) {
+        this(manager, name, 1, -1, true, false);
     }
 
     /**
      * Creates a new instance of {@code SoftmaxCrossEntropyLoss} with the given parameters.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param weight the weight to apply on the loss value, default 1
      * @param classAxis the axis that represents the class probabilities, default -1
@@ -56,8 +63,13 @@ public class SoftmaxCrossEntropyLoss extends Loss {
      *     false
      */
     public SoftmaxCrossEntropyLoss(
-            String name, float weight, int classAxis, boolean sparseLabel, boolean fromLogit) {
-        super(name);
+            NDManager manager,
+            String name,
+            float weight,
+            int classAxis,
+            boolean sparseLabel,
+            boolean fromLogit) {
+        super(manager, name);
         this.weight = weight;
         this.classAxis = classAxis;
         this.sparseLabel = sparseLabel;

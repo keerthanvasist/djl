@@ -43,7 +43,7 @@ public class ImageNetTest {
 
         try (Model model = Model.newInstance("model")) {
             TrainingConfig config =
-                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
                             .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 for (Batch batch : trainer.iterateDataset(imagenet)) {

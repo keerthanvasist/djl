@@ -53,10 +53,6 @@ public class ResnetTest {
 
     @Test
     public void testTrain() {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
-
         Block resNet50 =
                 ResNetV1.builder()
                         .setImageShape(new Shape(1, 28, 28))
@@ -66,6 +62,9 @@ public class ResnetTest {
 
         try (Model model = Model.newInstance("resnet")) {
             model.setBlock(resNet50);
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 int batchSize = config.getDevices().length * 16;
                 Shape inputShape = new Shape(batchSize, 1, 28, 28);
@@ -116,15 +115,16 @@ public class ResnetTest {
     public void testLoadTrain()
             throws IOException, ModelNotFoundException, MalformedModelException {
         try (ZooModel<Image, Classifications> model = getModel()) {
+            NDManager manager = model.getNDManager();
             TrainingConfig config =
-                    new DefaultTrainingConfig(Loss.l1Loss()).optInitializer(Initializer.ONES);
+                    new DefaultTrainingConfig(Loss.l1Loss(manager))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 int batchSize = config.getDevices().length * 16;
                 Shape inputShape = new Shape(batchSize, 3, 32, 32);
 
                 trainer.initialize(inputShape);
 
-                NDManager manager = trainer.getManager();
                 Shape[] outputShape =
                         model.getBlock().getOutputShapes(manager, new Shape[] {inputShape});
 

@@ -13,6 +13,7 @@
 package ai.djl.training.loss;
 
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.util.Pair;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,19 +37,22 @@ public class SimpleCompositeLoss extends AbstractCompositeLoss {
     /**
      * Creates a new empty instance of {@code CompositeLoss} that can combine the given {@link Loss}
      * components.
+     *
+     * @param manager an {@link NDManager}
      */
-    public SimpleCompositeLoss() {
-        this("CompositeLoss");
+    public SimpleCompositeLoss(NDManager manager) {
+        this(manager, "CompositeLoss");
     }
 
     /**
      * Creates a new empty instance of {@code CompositeLoss} that can combine the given {@link Loss}
      * components.
      *
+     * @param manager an {@link NDManager}
      * @param name the display name of the loss
      */
-    public SimpleCompositeLoss(String name) {
-        super(name);
+    public SimpleCompositeLoss(NDManager manager, String name) {
+        super(manager, name);
         components = new ArrayList<>();
         indices = new ArrayList<>();
     }

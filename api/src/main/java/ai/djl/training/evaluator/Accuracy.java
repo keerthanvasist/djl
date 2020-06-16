@@ -14,6 +14,7 @@ package ai.djl.training.evaluator;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.util.Pair;
 
@@ -23,31 +24,35 @@ public class Accuracy extends AbstractAccuracy {
     /**
      * Creates a multiclass accuracy evaluator that computes accuracy across axis 1 along the 0th
      * index.
+     *
+     * @param manager an {@link NDManager}
      */
-    public Accuracy() {
-        this("Accuracy", 0, 1);
+    public Accuracy(NDManager manager) {
+        this(manager, "Accuracy", 0, 1);
     }
 
     /**
      * Creates a multiclass accuracy evaluator that computes accuracy across axis 1 along given
      * index.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the evaluator, default is "Accuracy"
      * @param index the index of the NDArray in labels to compute accuracy for
      */
-    public Accuracy(String name, int index) {
-        super(name, index);
+    public Accuracy(NDManager manager, String name, int index) {
+        super(manager, name, index);
     }
 
     /**
      * Creates a multiclass accuracy evaluator.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the evaluator, default is "Accuracy"
      * @param index the index of the NDArray in labels to compute accuracy for
      * @param axis the axis that represent classes in prediction, default 1
      */
-    public Accuracy(String name, int index, int axis) {
-        super(name, index, axis);
+    public Accuracy(NDManager manager, String name, int index, int axis) {
+        super(manager, name, index, axis);
     }
 
     /** {@inheritDoc} */

@@ -42,10 +42,6 @@ public class ImageFolderTest {
     @Test
     public void testImageFolder() throws IOException {
         Repository repository = Repository.newInstance("test", "src/test/resources/imagefolder");
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
-
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Blocks.identityBlock());
 
@@ -61,6 +57,9 @@ public class ImageFolderTest {
             List<String> synsets = Arrays.asList("cat", "dog", "misc");
             Assert.assertEquals(synsets, dataset.getSynset());
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 NDArray cat =

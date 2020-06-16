@@ -15,6 +15,7 @@ package ai.djl.training.loss;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.nn.Activation;
 
 /**
@@ -28,29 +29,36 @@ public class SigmoidBinaryCrossEntropyLoss extends Loss {
     private float weight;
     private boolean fromSigmoid;
 
-    /** Performs Sigmoid cross-entropy loss for binary classification. */
-    public SigmoidBinaryCrossEntropyLoss() {
-        this("SigmoidBinaryCrossEntropyLoss");
+    /**
+     * Performs Sigmoid cross-entropy loss for binary classification.
+     *
+     * @param manager an {@link NDManager}
+     */
+    public SigmoidBinaryCrossEntropyLoss(NDManager manager) {
+        this(manager, "SigmoidBinaryCrossEntropyLoss");
     }
 
     /**
      * Performs Sigmoid cross-entropy loss for binary classification.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      */
-    public SigmoidBinaryCrossEntropyLoss(String name) {
-        this(name, 1, false);
+    public SigmoidBinaryCrossEntropyLoss(NDManager manager, String name) {
+        this(manager, name, 1, false);
     }
 
     /**
      * Performs Sigmoid cross-entropy loss for binary classification.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param weight the weight to apply on the loss value, default 1
      * @param fromSigmoid whether the input is from the output of sigmoid, default false
      */
-    public SigmoidBinaryCrossEntropyLoss(String name, float weight, boolean fromSigmoid) {
-        super(name);
+    public SigmoidBinaryCrossEntropyLoss(
+            NDManager manager, String name, float weight, boolean fromSigmoid) {
+        super(manager, name);
         this.weight = weight;
         this.fromSigmoid = fromSigmoid;
     }

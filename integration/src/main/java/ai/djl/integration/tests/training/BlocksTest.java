@@ -28,15 +28,14 @@ import ai.djl.training.loss.Loss;
 import org.testng.annotations.Test;
 
 public class BlocksTest {
-
-    TrainingConfig config =
-            new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
     @Test
     public void testFlattenBlock() {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Blocks.batchFlattenBlock());
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
                 ParameterStore parameterStore = new ParameterStore(manager, false);

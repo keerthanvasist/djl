@@ -62,11 +62,11 @@ public class MxSymbolBlockTest {
     @Test
     public void trainWithNewParam()
             throws IOException, ModelNotFoundException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
         try (Model model = MxModelZoo.MLP.loadModel()) {
             model.getBlock().clear();
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
 
@@ -90,10 +90,10 @@ public class MxSymbolBlockTest {
     @Test
     public void trainWithExistParam()
             throws IOException, ModelNotFoundException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
         try (Model model = MxModelZoo.MLP.loadModel()) {
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 NDManager manager = trainer.getManager();
 
@@ -117,9 +117,6 @@ public class MxSymbolBlockTest {
     @Test
     public void trainWithCustomLayer()
             throws IOException, ModelNotFoundException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
         try (Model model = MxModelZoo.MLP.loadModel()) {
             NDManager manager = model.getNDManager();
             SymbolBlock mlp = (SymbolBlock) model.getBlock();
@@ -133,6 +130,9 @@ public class MxSymbolBlockTest {
 
             model.setBlock(newMlp);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(manager))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Pair<NDArray, NDArray> result = train(manager, trainer, newMlp);
                 Assertions.assertAlmostEquals(result.getKey(), manager.create(17.357540130615234));
@@ -161,7 +161,8 @@ public class MxSymbolBlockTest {
         try (GradientCollector gradCol = trainer.newGradientCollector()) {
             pred = trainer.forward(new NDList(data)).singletonOrThrow();
             NDArray loss =
-                    Loss.softmaxCrossEntropyLoss().evaluate(new NDList(label), new NDList(pred));
+                    Loss.softmaxCrossEntropyLoss(manager)
+                            .evaluate(new NDList(label), new NDList(pred));
             gradCol.backward(loss);
         }
         List<NDArray> grads =

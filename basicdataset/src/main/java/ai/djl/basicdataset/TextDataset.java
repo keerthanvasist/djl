@@ -14,7 +14,6 @@ package ai.djl.basicdataset;
 
 import ai.djl.basicdataset.utils.TextData;
 import ai.djl.basicdataset.utils.TextData.Configuration;
-import ai.djl.engine.Engine;
 import ai.djl.modality.nlp.SimpleVocabulary;
 import ai.djl.modality.nlp.Vocabulary;
 import ai.djl.modality.nlp.embedding.TextEmbedding;
@@ -120,7 +119,7 @@ public abstract class TextDataset extends RandomAccessDataset {
     public abstract static class Builder<T extends Builder<T>> extends BaseBuilder<T> {
         private TextData.Configuration sourceConfiguration = new Configuration();
         private TextData.Configuration targetConfiguration = new Configuration();
-        private NDManager manager = Engine.getInstance().newBaseManager();
+        private NDManager manager;
 
         /**
          * Sets the {@link TextData.Configuration} to use for the source text data.
@@ -150,7 +149,7 @@ public abstract class TextDataset extends RandomAccessDataset {
          * @param manager the manager
          * @return this builder
          */
-        public T optManager(NDManager manager) {
+        public T setManager(NDManager manager) {
             this.manager = manager.newSubManager();
             return self();
         }

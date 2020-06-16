@@ -15,6 +15,7 @@ package ai.djl.training.loss;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.nn.Activation;
 
 /**
@@ -27,29 +28,35 @@ public class HingeLoss extends Loss {
     private int margin;
     private float weight;
 
-    /** Calculates Hinge loss. */
-    public HingeLoss() {
-        this("HingeLoss");
+    /**
+     * Calculates Hinge loss.
+     *
+     * @param manager an {@link NDManager}
+     */
+    public HingeLoss(NDManager manager) {
+        this(manager, "HingeLoss");
     }
 
     /**
      * Calculates Hinge loss.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      */
-    public HingeLoss(String name) {
-        this(name, 1, 1);
+    public HingeLoss(NDManager manager, String name) {
+        this(manager, name, 1, 1);
     }
 
     /**
      * Calculates Hinge loss.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param margin the margin in hinge loss. Defaults to 1.0
      * @param weight the weight to apply on loss value, default 1
      */
-    public HingeLoss(String name, int margin, float weight) {
-        super(name);
+    public HingeLoss(NDManager manager, String name, int margin, float weight) {
+        super(manager, name);
         this.margin = margin;
         this.weight = weight;
     }

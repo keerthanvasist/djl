@@ -29,10 +29,6 @@ public class CaptchaTest {
 
     @Test
     public void testCaptcha() throws IOException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
-
         try (Model model = Model.newInstance("captcha")) {
             model.setBlock(Blocks.identityBlock());
 
@@ -41,8 +37,11 @@ public class CaptchaTest {
                             .optUsage(Dataset.Usage.TEST)
                             .setSampling(32, true)
                             .build();
-
             captchaDataset.prepare();
+
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 for (Batch batch : trainer.iterateDataset(captchaDataset)) {
                     Assert.assertEquals(batch.getData().size(), 1);

@@ -31,10 +31,6 @@ public class MnistTest {
 
     @Test
     public void testMnistLocal() throws IOException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
-
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Blocks.identityBlock());
 
@@ -47,8 +43,11 @@ public class MnistTest {
                             .optRepository(repository)
                             .setSampling(32, true)
                             .build();
-
             mnist.prepare();
+
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 for (Batch batch : trainer.iterateDataset(mnist)) {
                     Assert.assertEquals(batch.getData().size(), 1);
@@ -61,10 +60,6 @@ public class MnistTest {
 
     @Test
     public void testMnistRemote() throws IOException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
-
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Blocks.identityBlock());
 
@@ -75,8 +70,11 @@ public class MnistTest {
                             .optUsage(Dataset.Usage.TEST)
                             .setSampling(32, true)
                             .build();
-
             mnist.prepare();
+
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 for (Batch batch : trainer.iterateDataset(mnist)) {
                     Assert.assertEquals(batch.getData().size(), 1);

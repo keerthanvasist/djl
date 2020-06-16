@@ -20,6 +20,7 @@ import ai.djl.examples.training.util.Arguments;
 import ai.djl.metric.Metrics;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Block;
 import ai.djl.nn.SequentialBlock;
@@ -65,7 +66,7 @@ public final class TrainCaptcha {
             RandomAccessDataset validateSet = getDataset(Usage.VALIDATION, arguments);
 
             // setup training configuration
-            DefaultTrainingConfig config = setupTrainingConfig(arguments);
+            DefaultTrainingConfig config = setupTrainingConfig(arguments, model.getNDManager());
 
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.setMetrics(new Metrics());
@@ -83,7 +84,8 @@ public final class TrainCaptcha {
         }
     }
 
-    private static DefaultTrainingConfig setupTrainingConfig(Arguments arguments) {
+    private static DefaultTrainingConfig setupTrainingConfig(
+            Arguments arguments, NDManager manager) {
         String outputDir = arguments.getOutputDir();
         CheckpointsTrainingListener listener = new CheckpointsTrainingListener(outputDir);
         listener.setSaveModelCallback(
@@ -94,9 +96,9 @@ public final class TrainCaptcha {
                     model.setProperty("Accuracy", String.format("%.5f", accuracy));
                     model.setProperty("Loss", String.format("%.5f", result.getValidateLoss()));
                 });
-        SimpleCompositeLoss loss = new SimpleCompositeLoss();
+        SimpleCompositeLoss loss = new SimpleCompositeLoss(manager);
         for (int i = 0; i < CaptchaDataset.CAPTCHA_LENGTH; i++) {
-            loss.addLoss(new SoftmaxCrossEntropyLoss("loss_digit_" + i), i);
+            loss.addLoss(new SoftmaxCrossEntropyLoss(manager, "loss_digit_" + i), i);
         }
 
         DefaultTrainingConfig config =
@@ -106,7 +108,7 @@ public final class TrainCaptcha {
                         .addTrainingListeners(listener);
 
         for (int i = 0; i < CaptchaDataset.CAPTCHA_LENGTH; i++) {
-            config.addEvaluator(new Accuracy("acc_digit_" + i, i));
+            config.addEvaluator(new Accuracy(manager, "acc_digit_" + i, i));
         }
 
         return config;

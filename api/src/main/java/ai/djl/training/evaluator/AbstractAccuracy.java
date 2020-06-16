@@ -15,6 +15,7 @@ package ai.djl.training.evaluator;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.util.Pair;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,32 +28,36 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractAccuracy extends Evaluator {
 
-    protected Map<String, Long> correctInstances;
+    protected Map<String, NDArray> correctInstances;
     protected int axis;
     protected int index;
+    protected NDManager manager;
 
     /**
      * Creates an accuracy evaluator that computes accuracy across axis 1 along given index.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the evaluator, default is "Accuracy"
      * @param index the index of the NDArray in labels to compute accuracy for
      */
-    public AbstractAccuracy(String name, int index) {
-        this(name, index, 1);
+    public AbstractAccuracy(NDManager manager, String name, int index) {
+        this(manager, name, index, 1);
     }
 
     /**
      * Creates an accuracy evaluator.
      *
      * @param name the name of the evaluator, default is "Accuracy"
+     * @param manager an {@link NDManager}
      * @param index the index of the NDArray in labels to compute accuracy for
      * @param axis the axis that represent classes in prediction, default 1
      */
-    public AbstractAccuracy(String name, int index, int axis) {
+    public AbstractAccuracy(NDManager manager, String name, int index, int axis) {
         super(name);
         correctInstances = new ConcurrentHashMap<>();
         this.axis = axis;
         this.index = index;
+        this.manager = manager;
     }
 
     /**
@@ -74,32 +79,37 @@ public abstract class AbstractAccuracy extends Evaluator {
     @Override
     public void addAccumulator(String key) {
         totalInstances.put(key, 0L);
-        correctInstances.put(key, 0L);
+        correctInstances.put(key, manager.create(0f));
     }
 
     /** {@inheritDoc} */
     @Override
     public void updateAccumulator(String key, NDList labels, NDList predictions) {
         Pair<Long, NDArray> update = accuracyHelper(labels, predictions);
-        totalInstances.compute(key, (k, v) -> v + update.getKey());
-        correctInstances.compute(key, (k, v) -> v + update.getValue().sum().getLong());
+        totalInstances.computeIfPresent(key, (k, v) -> v + update.getKey());
+        correctInstances.computeIfPresent(key, (k, v) -> v.addi(update.getValue().sum()));
     }
 
     /** {@inheritDoc} */
     @Override
     public void resetAccumulator(String key) {
-        totalInstances.compute(key, (k, v) -> 0L);
-        correctInstances.compute(key, (k, v) -> 0L);
+        totalInstances.computeIfPresent(key, (k, v) -> 0L);
+        correctInstances.computeIfPresent(key, (k, v) -> v.muli(0));
     }
 
     /** {@inheritDoc} */
     @Override
     public float getAccumulator(String key) {
         Long total = totalInstances.get(key);
-        if (total == null || total == 0) {
+        NDArray correct = correctInstances.get(key);
+        if (total == null) {
+            throw new IllegalArgumentException("No evaluator found at that path");
+        }
+
+        if (total == 0) {
             return Float.NaN;
         }
 
-        return (float) correctInstances.get(key) / totalInstances.get(key);
+        return correct.getFloat() / total;
     }
 }

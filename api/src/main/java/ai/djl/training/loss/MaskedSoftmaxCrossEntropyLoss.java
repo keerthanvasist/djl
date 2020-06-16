@@ -14,6 +14,7 @@ package ai.djl.training.loss;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 
 /**
  * {@code MaskedSoftmaxCrossEntropyLoss} is an implementation of {@link Loss} that only considers a
@@ -26,23 +27,29 @@ public class MaskedSoftmaxCrossEntropyLoss extends Loss {
     private boolean sparseLabel;
     private boolean fromLogit;
 
-    /** Creates a new instance of {@code SoftmaxCrossEntropyLoss} with default parameters. */
-    public MaskedSoftmaxCrossEntropyLoss() {
-        this("MaskedSoftmaxCrossEntropyLoss");
+    /**
+     * Creates a new instance of {@code SoftmaxCrossEntropyLoss} with default parameters.
+     *
+     * @param manager an {@link NDManager}
+     */
+    public MaskedSoftmaxCrossEntropyLoss(NDManager manager) {
+        this(manager, "MaskedSoftmaxCrossEntropyLoss");
     }
 
     /**
      * Creates a new instance of {@code SoftmaxCrossEntropyLoss} with default parameters.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      */
-    public MaskedSoftmaxCrossEntropyLoss(String name) {
-        this(name, 1, -1, true, false);
+    public MaskedSoftmaxCrossEntropyLoss(NDManager manager, String name) {
+        this(manager, name, 1, -1, true, false);
     }
 
     /**
      * Creates a new instance of {@code MaskedSoftmaxCrossEntropyLoss} with the given parameters.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param weight the weight to apply on the loss value, default 1
      * @param classAxis the axis that represents the class probabilities, default -1
@@ -51,8 +58,13 @@ public class MaskedSoftmaxCrossEntropyLoss extends Loss {
      *     false
      */
     public MaskedSoftmaxCrossEntropyLoss(
-            String name, float weight, int classAxis, boolean sparseLabel, boolean fromLogit) {
-        super(name);
+            NDManager manager,
+            String name,
+            float weight,
+            int classAxis,
+            boolean sparseLabel,
+            boolean fromLogit) {
+        super(manager, name);
         this.weight = weight;
         this.classAxis = classAxis;
         this.sparseLabel = sparseLabel;

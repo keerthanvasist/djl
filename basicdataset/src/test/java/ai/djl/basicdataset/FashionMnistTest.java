@@ -30,10 +30,6 @@ public class FashionMnistTest {
 
     @Test
     public void testFashMnistRemote() throws IOException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
-
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Blocks.identityBlock());
 
@@ -44,8 +40,11 @@ public class FashionMnistTest {
                             .optUsage(Dataset.Usage.TEST)
                             .setSampling(32, true)
                             .build();
-
             fashionMnist.prepare();
+
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 for (Batch batch : trainer.iterateDataset(fashionMnist)) {
                     Assert.assertEquals(batch.getData().size(), 1);

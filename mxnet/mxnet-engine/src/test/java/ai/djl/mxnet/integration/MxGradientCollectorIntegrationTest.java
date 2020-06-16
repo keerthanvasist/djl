@@ -37,7 +37,7 @@ public class MxGradientCollectorIntegrationTest {
             model.setBlock(Blocks.identityBlock());
             try (Trainer trainer =
                     model.newTrainer(
-                            new DefaultTrainingConfig(Loss.l2Loss())
+                            new DefaultTrainingConfig(Loss.l2Loss(manager))
                                     .optInitializer(Initializer.ONES))) {
                 try (GradientCollector gradCol = trainer.newGradientCollector()) {
                     NDArray lhs =

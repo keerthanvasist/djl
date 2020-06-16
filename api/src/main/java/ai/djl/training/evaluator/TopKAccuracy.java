@@ -15,6 +15,7 @@ package ai.djl.training.evaluator;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.util.Pair;
 import java.util.stream.IntStream;
@@ -33,12 +34,13 @@ public class TopKAccuracy extends AbstractAccuracy {
     /**
      * Creates a {@code TopKAccuracy} instance.
      *
+     * @param manager an {@link NDManager}
      * @param name the accuracy name, default "Top_K_Accuracy"
      * @param index the index of the {@link NDArray} in labels to compute topK accuracy for
      * @param topK the value of K
      */
-    public TopKAccuracy(String name, int index, int topK) {
-        super(name, index);
+    public TopKAccuracy(NDManager manager, String name, int index, int topK) {
+        super(manager, name, index);
         if (topK > 1) {
             this.topK = topK;
         } else {
@@ -50,21 +52,23 @@ public class TopKAccuracy extends AbstractAccuracy {
      * Creates an instance of {@code TopKAccuracy} evaluator that computes topK accuracy across axis
      * 1 along the given index.
      *
+     * @param manager an {@link NDManager}
      * @param index the index of the {@link NDArray} in labels to compute topK accuracy for
      * @param topK the value of K
      */
-    public TopKAccuracy(int index, int topK) {
-        this("Top_" + topK + "_Accuracy", index, topK);
+    public TopKAccuracy(NDManager manager, int index, int topK) {
+        this(manager, "Top_" + topK + "_Accuracy", index, topK);
     }
 
     /**
      * Creates an instance of {@code TopKAccuracy} evaluator that computes topK accuracy across axis
      * 1 along the 0th index.
      *
+     * @param manager an {@link NDManager}
      * @param topK the value of K
      */
-    public TopKAccuracy(int topK) {
-        this("Top_" + topK + "_Accuracy", 0, topK);
+    public TopKAccuracy(NDManager manager, int topK) {
+        this(manager, "Top_" + topK + "_Accuracy", 0, topK);
     }
 
     /** {@inheritDoc} */
