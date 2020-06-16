@@ -16,6 +16,7 @@ package ai.djl.training.evaluator;
 import ai.djl.modality.cv.MultiBoxTarget;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.util.Pair;
 
@@ -32,10 +33,11 @@ public class SingleShotDetectionAccuracy extends AbstractAccuracy {
     /**
      * Creates a new instance of {@link SingleShotDetectionAccuracy} with the given name.
      *
+     * @param manager an {@link NDManager}
      * @param name the name given to the accuracy
      */
-    public SingleShotDetectionAccuracy(String name) {
-        super(name, 0);
+    public SingleShotDetectionAccuracy(NDManager manager, String name) {
+        super(manager, name, 0);
     }
 
     /** {@inheritDoc} */

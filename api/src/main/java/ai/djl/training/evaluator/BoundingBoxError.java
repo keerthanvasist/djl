@@ -15,6 +15,7 @@ package ai.djl.training.evaluator;
 import ai.djl.modality.cv.MultiBoxTarget;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,16 +25,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BoundingBoxError extends Evaluator {
 
-    private Map<String, Float> ssdBoxPredictionError;
+    private Map<String, NDArray> ssdBoxPredictionError;
     private MultiBoxTarget multiBoxTarget = MultiBoxTarget.builder().build();
+    private NDManager manager;
 
     /**
      * Creates an BoundingBoxError evaluator.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the evaluator
      */
-    public BoundingBoxError(String name) {
+    public BoundingBoxError(NDManager manager, String name) {
         super(name);
+        this.manager = manager;
         ssdBoxPredictionError = new ConcurrentHashMap<>();
     }
 
@@ -55,7 +59,7 @@ public class BoundingBoxError extends Evaluator {
     @Override
     public void addAccumulator(String key) {
         totalInstances.put(key, 0L);
-        ssdBoxPredictionError.put(key, 0f);
+        ssdBoxPredictionError.put(key, manager.create(0f));
     }
 
     /** {@inheritDoc} */
@@ -63,29 +67,29 @@ public class BoundingBoxError extends Evaluator {
     public void updateAccumulator(String key, NDList labels, NDList predictions) {
         NDArray boundingBoxError = evaluate(labels, predictions);
         float update = boundingBoxError.sum().getFloat();
-        totalInstances.compute(key, (k, v) -> v + boundingBoxError.size());
-        ssdBoxPredictionError.compute(key, (k, v) -> v + update);
+        totalInstances.computeIfPresent(key, (k, v) -> v + boundingBoxError.size());
+        ssdBoxPredictionError.computeIfPresent(key, (k, v) -> v.addi(update));
     }
 
     /** {@inheritDoc} */
     @Override
     public void resetAccumulator(String key) {
         totalInstances.compute(key, (k, v) -> 0L);
-        ssdBoxPredictionError.compute(key, (k, v) -> 0f);
+        ssdBoxPredictionError.computeIfPresent(key, (k, v) -> v.muli(0));
     }
 
     /** {@inheritDoc} */
     @Override
     public float getAccumulator(String key) {
         Long total = totalInstances.get(key);
+        NDArray predError = ssdBoxPredictionError.get(key);
         if (total == null) {
             throw new IllegalArgumentException("No evaluator found at that path");
         }
-
         if (total == 0) {
             return Float.NaN;
         }
 
-        return ssdBoxPredictionError.get(key) / totalInstances.get(key);
+        return predError.getFloat() / total;
     }
 }

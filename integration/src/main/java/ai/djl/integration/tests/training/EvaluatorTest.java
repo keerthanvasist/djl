@@ -33,7 +33,7 @@ public class EvaluatorTest {
                     manager.create(new float[] {0.3f, 0.7f, 0, 1, 0.4f, 0.6f}, new Shape(3, 2));
             NDArray labels = manager.create(new int[] {0, 1, 1}, new Shape(3));
 
-            AbstractAccuracy acc = new Accuracy();
+            AbstractAccuracy acc = new Accuracy(manager);
             acc.addAccumulator("");
             acc.updateAccumulator("", new NDList(labels), new NDList(predictions));
             float accuracy = acc.getAccumulator("");
@@ -55,7 +55,7 @@ public class EvaluatorTest {
                             },
                             new Shape(3, 4));
             NDArray labels = manager.create(new int[] {0, 1, 2}, new Shape(3));
-            TopKAccuracy topKAccuracy = new TopKAccuracy(2);
+            TopKAccuracy topKAccuracy = new TopKAccuracy(manager, 2);
             topKAccuracy.addAccumulator("");
             topKAccuracy.updateAccumulator("", new NDList(labels), new NDList(predictions));
             float expectedAccuracy = 1.f / 3;

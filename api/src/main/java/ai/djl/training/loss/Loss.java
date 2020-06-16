@@ -12,7 +12,9 @@
  */
 package ai.djl.training.loss;
 
+import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.training.evaluator.Evaluator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,132 +38,150 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class Loss extends Evaluator {
 
-    private Map<String, Float> totalLoss;
+    private Map<String, NDArray> totalLoss;
+    private NDArray nanCheck;
+    private NDManager manager;
 
     /**
      * Base class for metric with abstract update methods.
      *
+     * @param manager an {@link NDManager}
      * @param name The display name of the Loss
      */
-    public Loss(String name) {
+    public Loss(NDManager manager, String name) {
         super(name);
+        this.manager = manager;
         totalLoss = new ConcurrentHashMap<>();
+        nanCheck = manager.create(0f);
     }
 
     /**
      * Returns a new instance of {@link L1Loss} with default weight and batch axis.
      *
+     * @param manager an {@link NDManager}
      * @return a new instance of {@link L1Loss}
      */
-    public static L1Loss l1Loss() {
-        return new L1Loss();
+    public static L1Loss l1Loss(NDManager manager) {
+        return new L1Loss(manager);
     }
 
     /**
      * Returns a new instance of {@link L1Loss} with default weight and batch axis.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @return a new instance of {@link L1Loss}
      */
-    public static L1Loss l1Loss(String name) {
-        return new L1Loss(name);
+    public static L1Loss l1Loss(NDManager manager, String name) {
+        return new L1Loss(manager, name);
     }
 
     /**
      * Returns a new instance of {@link L1Loss} with given weight and batch axis.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param weight the weight to apply on loss value, default 1
      * @return a new instance of {@link L1Loss}
      */
-    public static L1Loss l1Loss(String name, float weight) {
-        return new L1Loss(name, weight);
+    public static L1Loss l1Loss(NDManager manager, String name, float weight) {
+        return new L1Loss(manager, name, weight);
     }
 
     /**
      * Returns a new instance of {@link L2Loss} with default weight and batch axis.
      *
+     * @param manager an {@link NDManager}
      * @return a new instance of {@link L2Loss}
      */
-    public static L2Loss l2Loss() {
-        return new L2Loss();
+    public static L2Loss l2Loss(NDManager manager) {
+        return new L2Loss(manager);
     }
 
     /**
      * Returns a new instance of {@link L2Loss} with default weight and batch axis.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @return a new instance of {@link L2Loss}
      */
-    public static L2Loss l2Loss(String name) {
-        return new L2Loss(name);
+    public static L2Loss l2Loss(NDManager manager, String name) {
+        return new L2Loss(manager, name);
     }
 
     /**
      * Returns a new instance of {@link L2Loss} with given weight and batch axis.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param weight the weight to apply on loss value, default 1
      * @return a new instance of {@link L2Loss}
      */
-    public static L2Loss l2Loss(String name, float weight) {
-        return new L2Loss(name, weight);
+    public static L2Loss l2Loss(NDManager manager, String name, float weight) {
+        return new L2Loss(manager, name, weight);
     }
 
     /**
      * Returns a new instance of {@link SigmoidBinaryCrossEntropyLoss} with default arguments.
      *
+     * @param manager an {@link NDManager}
      * @return a new instance of {@link SigmoidBinaryCrossEntropyLoss}
      */
-    public static SigmoidBinaryCrossEntropyLoss sigmoidBinaryCrossEntropyLoss() {
-        return new SigmoidBinaryCrossEntropyLoss();
+    public static SigmoidBinaryCrossEntropyLoss sigmoidBinaryCrossEntropyLoss(NDManager manager) {
+        return new SigmoidBinaryCrossEntropyLoss(manager);
     }
 
     /**
      * Returns a new instance of {@link SigmoidBinaryCrossEntropyLoss} with default arguments.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @return a new instance of {@link SigmoidBinaryCrossEntropyLoss}
      */
-    public static SigmoidBinaryCrossEntropyLoss sigmoidBinaryCrossEntropyLoss(String name) {
-        return new SigmoidBinaryCrossEntropyLoss(name);
+    public static SigmoidBinaryCrossEntropyLoss sigmoidBinaryCrossEntropyLoss(
+            NDManager manager, String name) {
+        return new SigmoidBinaryCrossEntropyLoss(manager, name);
     }
 
     /**
      * Returns a new instance of {@link SigmoidBinaryCrossEntropyLoss} with the given arguments.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param weight the weight to apply on the loss value, default 1
      * @param fromSigmoid whether the input is from the output of sigmoid, default false
      * @return a new instance of {@link SigmoidBinaryCrossEntropyLoss}
      */
     public static SigmoidBinaryCrossEntropyLoss sigmoidBinaryCrossEntropyLoss(
-            String name, float weight, boolean fromSigmoid) {
-        return new SigmoidBinaryCrossEntropyLoss(name, weight, fromSigmoid);
+            NDManager manager, String name, float weight, boolean fromSigmoid) {
+        return new SigmoidBinaryCrossEntropyLoss(manager, name, weight, fromSigmoid);
     }
 
     /**
      * Returns a new instance of {@link SoftmaxCrossEntropyLoss} with default arguments.
      *
+     * @param manager an {@link NDManager}
      * @return a new instance of {@link SoftmaxCrossEntropyLoss}
      */
-    public static SoftmaxCrossEntropyLoss softmaxCrossEntropyLoss() {
-        return new SoftmaxCrossEntropyLoss();
+    public static SoftmaxCrossEntropyLoss softmaxCrossEntropyLoss(NDManager manager) {
+        return new SoftmaxCrossEntropyLoss(manager);
     }
 
     /**
      * Returns a new instance of {@link SoftmaxCrossEntropyLoss} with default arguments.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @return a new instance of {@link SoftmaxCrossEntropyLoss}
      */
-    public static SoftmaxCrossEntropyLoss softmaxCrossEntropyLoss(String name) {
-        return new SoftmaxCrossEntropyLoss(name);
+    public static SoftmaxCrossEntropyLoss softmaxCrossEntropyLoss(NDManager manager, String name) {
+        return new SoftmaxCrossEntropyLoss(manager, name);
     }
 
     /**
      * Returns a new instance of {@link SoftmaxCrossEntropyLoss} with the given arguments.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param weight the weight to apply on the loss value, default 1
      * @param classAxis the axis that represents the class probabilities, default -1
@@ -170,32 +190,42 @@ public abstract class Loss extends Evaluator {
      * @return a new instance of {@link SoftmaxCrossEntropyLoss}
      */
     public static SoftmaxCrossEntropyLoss softmaxCrossEntropyLoss(
-            String name, float weight, int classAxis, boolean sparseLabel, boolean fromLogit) {
-        return new SoftmaxCrossEntropyLoss(name, weight, classAxis, sparseLabel, fromLogit);
+            NDManager manager,
+            String name,
+            float weight,
+            int classAxis,
+            boolean sparseLabel,
+            boolean fromLogit) {
+        return new SoftmaxCrossEntropyLoss(
+                manager, name, weight, classAxis, sparseLabel, fromLogit);
     }
 
     /**
      * Returns a new instance of {@link MaskedSoftmaxCrossEntropyLoss} with default arguments.
      *
+     * @param manager an {@link NDManager}
      * @return a new instance of {@link MaskedSoftmaxCrossEntropyLoss}
      */
-    public static MaskedSoftmaxCrossEntropyLoss maskedSoftmaxCrossEntropyLoss() {
-        return new MaskedSoftmaxCrossEntropyLoss();
+    public static MaskedSoftmaxCrossEntropyLoss maskedSoftmaxCrossEntropyLoss(NDManager manager) {
+        return new MaskedSoftmaxCrossEntropyLoss(manager);
     }
 
     /**
      * Returns a new instance of {@link MaskedSoftmaxCrossEntropyLoss} with default arguments.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @return a new instance of {@link MaskedSoftmaxCrossEntropyLoss}
      */
-    public static MaskedSoftmaxCrossEntropyLoss maskedSoftmaxCrossEntropyLoss(String name) {
-        return new MaskedSoftmaxCrossEntropyLoss(name);
+    public static MaskedSoftmaxCrossEntropyLoss maskedSoftmaxCrossEntropyLoss(
+            NDManager manager, String name) {
+        return new MaskedSoftmaxCrossEntropyLoss(manager, name);
     }
 
     /**
      * Returns a new instance of {@link MaskedSoftmaxCrossEntropyLoss} with the given arguments.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param weight the weight to apply on the loss value, default 1
      * @param classAxis the axis that represents the class probabilities, default -1
@@ -204,76 +234,99 @@ public abstract class Loss extends Evaluator {
      * @return a new instance of {@link MaskedSoftmaxCrossEntropyLoss}
      */
     public static MaskedSoftmaxCrossEntropyLoss maskedSoftmaxCrossEntropyLoss(
-            String name, float weight, int classAxis, boolean sparseLabel, boolean fromLogit) {
-        return new MaskedSoftmaxCrossEntropyLoss(name, weight, classAxis, sparseLabel, fromLogit);
+            NDManager manager,
+            String name,
+            float weight,
+            int classAxis,
+            boolean sparseLabel,
+            boolean fromLogit) {
+        return new MaskedSoftmaxCrossEntropyLoss(
+                manager, name, weight, classAxis, sparseLabel, fromLogit);
     }
 
     /**
      * Returns a new instance of {@link HingeLoss} with default arguments.
      *
+     * @param manager an {@link NDManager}
      * @return a new instance of {@link HingeLoss}
      */
-    public static HingeLoss hingeLoss() {
-        return new HingeLoss();
+    public static HingeLoss hingeLoss(NDManager manager) {
+        return new HingeLoss(manager);
     }
 
     /**
      * Returns a new instance of {@link HingeLoss} with default arguments.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @return a new instance of {@link HingeLoss}
      */
-    public static HingeLoss hingeLoss(String name) {
-        return new HingeLoss(name);
+    public static HingeLoss hingeLoss(NDManager manager, String name) {
+        return new HingeLoss(manager, name);
     }
 
     /**
      * Returns a new instance of {@link HingeLoss} with the given arguments.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param margin the margin in hinge loss. Defaults to 1.0
      * @param weight the weight to apply on loss value, default 1
      * @return a new instance of {@link HingeLoss}
      */
-    public static HingeLoss hingeLoss(String name, int margin, float weight) {
-        return new HingeLoss(name, margin, weight);
+    public static HingeLoss hingeLoss(NDManager manager, String name, int margin, float weight) {
+        return new HingeLoss(manager, name, margin, weight);
     }
 
     /** {@inheritDoc} */
     @Override
     public void addAccumulator(String key) {
         totalInstances.put(key, 0L);
-        totalLoss.put(key, 0f);
+        totalLoss.put(key, manager.create(0f));
     }
 
     /** {@inheritDoc} */
     @Override
     public void updateAccumulator(String key, NDList labels, NDList predictions) {
         // this is a synchronized operation, only call it at end of batch or epoch
-        float update = evaluate(labels, predictions).sum().getFloat();
-        totalInstances.compute(key, (k, v) -> v + 1);
-        totalLoss.compute(key, (k, v) -> v + update);
+        NDArray update = evaluate(labels, predictions).sum();
+        totalInstances.computeIfPresent(key, (k, v) -> v + 1);
+        totalLoss.computeIfPresent(key, (k, v) -> v.addi(update));
+        nanCheck.addi(update);
     }
 
     /** {@inheritDoc} */
     @Override
     public void resetAccumulator(String key) {
-        totalInstances.compute(key, (k, v) -> 0L);
-        totalLoss.compute(key, (k, v) -> 0f);
+        totalInstances.computeIfPresent(key, (k, v) -> 0L);
+        totalLoss.computeIfPresent(key, (k, v) -> v.muli(0));
     }
 
     /** {@inheritDoc} */
     @Override
     public float getAccumulator(String key) {
         Long total = totalInstances.get(key);
+        NDArray loss = totalLoss.get(key);
         if (total == null) {
-            throw new IllegalArgumentException("No loss found at that path");
+            throw new IllegalArgumentException("No evaluator found at that path");
         }
 
         if (total == 0) {
             return Float.NaN;
         }
 
-        return totalLoss.get(key) / totalInstances.get(key);
+        return loss.getFloat() / total;
+    }
+
+    /**
+     * Returns the cumulated loss value from the last time this method was called.
+     *
+     * @return the accumulated loss value
+     * @throws IllegalArgumentException if no accumulator was added with the given key
+     */
+    public boolean isNan() {
+        boolean isNan = Float.isNaN(nanCheck.getFloat());
+        nanCheck.muli(0);
+        return isNan;
     }
 }

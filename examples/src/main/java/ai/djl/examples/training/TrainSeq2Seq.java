@@ -31,6 +31,7 @@ import ai.djl.modality.nlp.preprocess.TextTerminator;
 import ai.djl.modality.nlp.preprocess.TextTruncator;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.index.NDIndex;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Block;
@@ -69,7 +70,13 @@ public final class TrainSeq2Seq {
         try (Model model = Model.newInstance("seq2seqMTEn-Fr")) {
             // get training and validation dataset
             TextDataset trainingSet =
-                    getDataset(Dataset.Usage.TRAIN, arguments, executorService, null, null);
+                    getDataset(
+                            model.getNDManager(),
+                            Dataset.Usage.TRAIN,
+                            arguments,
+                            executorService,
+                            null,
+                            null);
             // Fetch TextEmbedding from dataset
             TrainableTextEmbedding sourceEmbedding =
                     (TrainableTextEmbedding) trainingSet.getTextEmbedding(true);
@@ -79,6 +86,7 @@ public final class TrainSeq2Seq {
             // Validate must use the same embedding as training
             TextDataset validateDataset =
                     getDataset(
+                            model.getNDManager(),
                             Dataset.Usage.TEST,
                             arguments,
                             executorService,
@@ -94,7 +102,7 @@ public final class TrainSeq2Seq {
             model.setBlock(block);
 
             // setup training configuration
-            DefaultTrainingConfig config = setupTrainingConfig(arguments);
+            DefaultTrainingConfig config = setupTrainingConfig(arguments, model.getNDManager());
 
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.setMetrics(new Metrics());
@@ -141,7 +149,8 @@ public final class TrainSeq2Seq {
         return new EncoderDecoder(simpleTextEncoder, simpleTextDecoder);
     }
 
-    public static DefaultTrainingConfig setupTrainingConfig(Arguments arguments) {
+    public static DefaultTrainingConfig setupTrainingConfig(
+            Arguments arguments, NDManager manager) {
         String outputDir = arguments.getOutputDir();
         CheckpointsTrainingListener listener = new CheckpointsTrainingListener(outputDir);
         listener.setSaveModelCallback(
@@ -153,8 +162,8 @@ public final class TrainSeq2Seq {
                     model.setProperty("Loss", String.format("%.5f", result.getValidateLoss()));
                 });
 
-        return new DefaultTrainingConfig(new MaskedSoftmaxCrossEntropyLoss())
-                .addEvaluator(new Accuracy("Accuracy", 0, 2))
+        return new DefaultTrainingConfig(new MaskedSoftmaxCrossEntropyLoss(manager))
+                .addEvaluator(new Accuracy(manager, "Accuracy", 0, 2))
                 .optDevices(Device.getDevices(arguments.getMaxGpus()))
                 .optDataManager(new Seq2SeqDataManager())
                 .addTrainingListeners(TrainingListener.Defaults.logging(outputDir))
@@ -162,6 +171,7 @@ public final class TrainSeq2Seq {
     }
 
     public static TextDataset getDataset(
+            NDManager manager,
             Dataset.Usage usage,
             Arguments arguments,
             ExecutorService executorService,
@@ -172,6 +182,7 @@ public final class TrainSeq2Seq {
                 usage == Dataset.Usage.TRAIN ? arguments.getLimit() : arguments.getLimit() / 10;
         TatoebaEnglishFrenchDataset.Builder datasetBuilder =
                 TatoebaEnglishFrenchDataset.builder()
+                        .setManager(manager)
                         .setSampling(arguments.getBatchSize(), true, false)
                         .optDataBatchifier(
                                 PaddingStackBatchifier.builder()

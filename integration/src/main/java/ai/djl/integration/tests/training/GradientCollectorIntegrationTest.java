@@ -45,7 +45,7 @@ public class GradientCollectorIntegrationTest {
             model.setBlock(Blocks.identityBlock());
             try (Trainer trainer =
                     model.newTrainer(
-                            new DefaultTrainingConfig(Loss.l2Loss())
+                            new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
                                     .optInitializer(Initializer.ONES))) {
                 try (GradientCollector gradCol = trainer.newGradientCollector()) {
                     NDArray lhs =
@@ -75,22 +75,21 @@ public class GradientCollectorIntegrationTest {
         int batchSize = 10;
         int epochs = 10;
 
-        Optimizer optimizer =
-                Optimizer.sgd()
-                        .setLearningRateTracker(LearningRateTracker.fixedLearningRate(.03f))
-                        .build();
-
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss())
-                        .addTrainingListeners(new EvaluatorTrainingListener())
-                        .optInitializer(Initializer.ONES)
-                        .optOptimizer(optimizer);
-
         try (Model model = Model.newInstance("linear")) {
             Linear block = Linear.builder().setOutChannels(1).build();
             model.setBlock(block);
 
             NDManager manager = model.getNDManager();
+            Optimizer optimizer =
+                    Optimizer.sgd()
+                            .setLearningRateTracker(LearningRateTracker.fixedLearningRate(.03f))
+                            .build();
+
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(manager))
+                            .addTrainingListeners(new EvaluatorTrainingListener())
+                            .optInitializer(Initializer.ONES)
+                            .optOptimizer(optimizer);
 
             NDArray weight = manager.create(new float[] {2.f, -3.4f}, new Shape(2, 1));
             float bias = 4.2f;

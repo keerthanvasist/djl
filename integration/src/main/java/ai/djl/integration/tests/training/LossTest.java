@@ -29,7 +29,8 @@ public class LossTest {
             NDArray pred = manager.create(new float[] {1, 2, 3, 4, 5});
             NDArray label = manager.ones(new Shape(5));
             Assert.assertEquals(
-                    Loss.l1Loss().evaluate(new NDList(label), new NDList(pred)).getFloat(), 2.0f);
+                    Loss.l1Loss(manager).evaluate(new NDList(label), new NDList(pred)).getFloat(),
+                    2.0f);
         }
     }
 
@@ -39,7 +40,8 @@ public class LossTest {
             NDArray pred = manager.create(new float[] {1, 2, 3, 4, 5});
             NDArray label = manager.ones(new Shape(5));
             Assert.assertEquals(
-                    Loss.l2Loss().evaluate(new NDList(label), new NDList(pred)).getFloat(), 3.0f);
+                    Loss.l2Loss(manager).evaluate(new NDList(label), new NDList(pred)).getFloat(),
+                    3.0f);
         }
     }
 
@@ -49,7 +51,8 @@ public class LossTest {
             NDArray pred = manager.create(new float[] {1, 2, 3, 4, 5});
             NDArray label = manager.ones(new Shape(1));
             Assertions.assertAlmostEquals(
-                    Loss.softmaxCrossEntropyLoss().evaluate(new NDList(label), new NDList(pred)),
+                    Loss.softmaxCrossEntropyLoss(manager)
+                            .evaluate(new NDList(label), new NDList(pred)),
                     manager.create(3.45191431f));
         }
     }
@@ -60,7 +63,9 @@ public class LossTest {
             NDArray pred = manager.create(new float[] {1, 2, 3, 4, 5});
             NDArray label = manager.ones(new Shape(5)).neg();
             Assert.assertEquals(
-                    Loss.hingeLoss().evaluate(new NDList(label), new NDList(pred)).getFloat(),
+                    Loss.hingeLoss(manager)
+                            .evaluate(new NDList(label), new NDList(pred))
+                            .getFloat(),
                     4.0f);
         }
     }
@@ -71,7 +76,7 @@ public class LossTest {
             NDArray pred = manager.create(new float[] {1, 2, 3, 4, 5});
             NDArray label = manager.ones(new Shape(5));
             Assert.assertEquals(
-                    Loss.sigmoidBinaryCrossEntropyLoss()
+                    Loss.sigmoidBinaryCrossEntropyLoss(manager)
                             .evaluate(new NDList(label), new NDList(pred))
                             .getFloat(),
                     0.10272846f);
@@ -85,7 +90,7 @@ public class LossTest {
             NDArray label = manager.ones(new Shape(3, 4));
             NDArray validLengths = manager.create(new int[] {4, 2, 0});
             Assertions.assertAlmostEquals(
-                    Loss.maskedSoftmaxCrossEntropyLoss()
+                    Loss.maskedSoftmaxCrossEntropyLoss(manager)
                             .evaluate(new NDList(label, validLengths), new NDList(pred)),
                     manager.create(new float[] {2.3025851f, 1.1512926f, 0}).reshape(3, 1));
         }

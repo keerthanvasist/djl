@@ -15,6 +15,7 @@ package ai.djl.training.loss;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.util.Pair;
 import java.util.List;
 
@@ -32,10 +33,11 @@ public abstract class AbstractCompositeLoss extends Loss {
     /**
      * Constructs a composite loss with the given name.
      *
+     * @param manager an {@link NDManager}
      * @param name the display name of the loss
      */
-    public AbstractCompositeLoss(String name) {
-        super(name);
+    public AbstractCompositeLoss(NDManager manager, String name) {
+        super(manager, name);
     }
 
     /**

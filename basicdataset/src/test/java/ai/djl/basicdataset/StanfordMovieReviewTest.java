@@ -28,6 +28,7 @@ public class StanfordMovieReviewTest {
         try (NDManager manager = NDManager.newBaseManager()) {
             StanfordMovieReview dataset =
                     StanfordMovieReview.builder()
+                            .setManager(manager)
                             .setSourceConfiguration(
                                     new Configuration()
                                             .setTextEmbedding(
@@ -53,6 +54,7 @@ public class StanfordMovieReviewTest {
         try (NDManager manager = NDManager.newBaseManager()) {
             StanfordMovieReview dataset =
                     StanfordMovieReview.builder()
+                            .setManager(manager)
                             .setSourceConfiguration(
                                     new Configuration()
                                             .setTextEmbedding(

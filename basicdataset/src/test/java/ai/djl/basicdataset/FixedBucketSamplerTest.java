@@ -13,6 +13,7 @@
 package ai.djl.basicdataset;
 
 import ai.djl.basicdataset.utils.FixedBucketSampler;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.translate.PaddingStackBatchifier;
 import java.io.IOException;
@@ -26,66 +27,69 @@ import org.testng.annotations.Test;
 public class FixedBucketSamplerTest {
     @Test
     public void testFixedBucketSampler() throws IOException {
-        FixedBucketSampler fixedBucketSampler = new FixedBucketSampler(10, 100, false, true);
-        TatoebaEnglishFrenchDataset dataset =
-                TatoebaEnglishFrenchDataset.builder()
-                        .setSampling(fixedBucketSampler)
-                        .optDataBatchifier(
-                                PaddingStackBatchifier.builder()
-                                        .optIncludeValidLengths(true)
-                                        .addPad(0, 0, (m) -> m.zeros(new Shape(1)), 10)
-                                        .build())
-                        .optLabelBatchifier(
-                                PaddingStackBatchifier.builder()
-                                        .optIncludeValidLengths(true)
-                                        .addPad(0, 0, (m) -> m.ones(new Shape(1)), 10)
-                                        .build())
-                        .build();
-        dataset.prepare();
+        try (NDManager manager = NDManager.newBaseManager()) {
+            FixedBucketSampler fixedBucketSampler = new FixedBucketSampler(10, 100, false, true);
+            TatoebaEnglishFrenchDataset dataset =
+                    TatoebaEnglishFrenchDataset.builder()
+                            .setManager(manager)
+                            .setSampling(fixedBucketSampler)
+                            .optDataBatchifier(
+                                    PaddingStackBatchifier.builder()
+                                            .optIncludeValidLengths(true)
+                                            .addPad(0, 0, (m) -> m.zeros(new Shape(1)), 10)
+                                            .build())
+                            .optLabelBatchifier(
+                                    PaddingStackBatchifier.builder()
+                                            .optIncludeValidLengths(true)
+                                            .addPad(0, 0, (m) -> m.ones(new Shape(1)), 10)
+                                            .build())
+                            .build();
+            dataset.prepare();
 
-        Iterator<List<Long>> iterator = fixedBucketSampler.sample(dataset);
-        long count = 0;
-        Set<Long> indicesSet = new HashSet<>();
-        while (iterator.hasNext()) {
-            List<Long> indices = iterator.next();
-            int max = Integer.MIN_VALUE;
-            int min = Integer.MAX_VALUE;
-            for (Long index : indices) {
-                int size = dataset.getProcessedText(index, true).size();
-                if (size > max) {
-                    max = size;
+            Iterator<List<Long>> iterator = fixedBucketSampler.sample(dataset);
+            long count = 0;
+            Set<Long> indicesSet = new HashSet<>();
+            while (iterator.hasNext()) {
+                List<Long> indices = iterator.next();
+                int max = Integer.MIN_VALUE;
+                int min = Integer.MAX_VALUE;
+                for (Long index : indices) {
+                    int size = dataset.getProcessedText(index, true).size();
+                    if (size > max) {
+                        max = size;
+                    }
+                    if (size < min) {
+                        min = size;
+                    }
                 }
-                if (size < min) {
-                    min = size;
-                }
+                indicesSet.addAll(indices);
+                count = count + indices.size();
             }
-            indicesSet.addAll(indices);
-            count = count + indices.size();
-        }
-        Assert.assertEquals(count, dataset.size());
-        Assert.assertEquals(indicesSet.size(), dataset.size());
+            Assert.assertEquals(count, dataset.size());
+            Assert.assertEquals(indicesSet.size(), dataset.size());
 
-        fixedBucketSampler = new FixedBucketSampler(10, 100, false, false);
-        iterator = fixedBucketSampler.sample(dataset);
-        count = 0;
-        indicesSet = new HashSet<>();
-        while (iterator.hasNext()) {
-            List<Long> indices = iterator.next();
-            int max = Integer.MIN_VALUE;
-            int min = Integer.MAX_VALUE;
-            for (Long index : indices) {
-                int size = dataset.getProcessedText(index, true).size();
-                if (size > max) {
-                    max = size;
+            fixedBucketSampler = new FixedBucketSampler(10, 100, false, false);
+            iterator = fixedBucketSampler.sample(dataset);
+            count = 0;
+            indicesSet = new HashSet<>();
+            while (iterator.hasNext()) {
+                List<Long> indices = iterator.next();
+                int max = Integer.MIN_VALUE;
+                int min = Integer.MAX_VALUE;
+                for (Long index : indices) {
+                    int size = dataset.getProcessedText(index, true).size();
+                    if (size > max) {
+                        max = size;
+                    }
+                    if (size < min) {
+                        min = size;
+                    }
                 }
-                if (size < min) {
-                    min = size;
-                }
+                indicesSet.addAll(indices);
+                count = count + indices.size();
             }
-            indicesSet.addAll(indices);
-            count = count + indices.size();
+            Assert.assertEquals(count, dataset.size());
+            Assert.assertEquals(indicesSet.size(), dataset.size());
         }
-        Assert.assertEquals(count, dataset.size());
-        Assert.assertEquals(indicesSet.size(), dataset.size());
     }
 }

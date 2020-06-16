@@ -12,6 +12,7 @@
  */
 package ai.djl.integration.tests.nn;
 
+import ai.djl.Device;
 import ai.djl.MalformedModelException;
 import ai.djl.Model;
 import ai.djl.engine.Engine;
@@ -58,14 +59,13 @@ public class BlockCoreTest {
 
     @Test
     public void testLinear() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
         long outSize = 3;
         Block block = Linear.builder().setOutChannels(outSize).build();
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
-
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(2, 2);
                 trainer.initialize(inputShape);
@@ -86,6 +86,9 @@ public class BlockCoreTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(2, 2);
                 trainer.initialize(inputShape);
@@ -103,14 +106,14 @@ public class BlockCoreTest {
 
     @Test
     public void testLinearWithFlatten() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
         long outSize = 10;
         Block block = Linear.builder().setOutChannels(outSize).optFlatten(false).build();
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(10, 20, 12);
                 trainer.initialize(inputShape);
@@ -126,14 +129,14 @@ public class BlockCoreTest {
 
     @Test
     public void testLinearWithDefinedLayout() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
         long outSize = 3;
         Block block = Linear.builder().setOutChannels(outSize).build();
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape =
                         new Shape(
@@ -156,7 +159,9 @@ public class BlockCoreTest {
         block = Linear.builder().setOutChannels(outSize).optBias(false).build();
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
-
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape =
                         new Shape(
@@ -177,13 +182,13 @@ public class BlockCoreTest {
 
     @Test
     public void testBatchNorm() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
         Block block = BatchNorm.builder().optAxis(1).build();
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(2, 2);
                 trainer.initialize(inputShape);
@@ -201,13 +206,13 @@ public class BlockCoreTest {
 
     @Test
     public void testDropout() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
         Block block = Dropout.builder().optProbability(.5f).build();
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(2, 2);
                 trainer.initialize(inputShape);
@@ -224,9 +229,6 @@ public class BlockCoreTest {
 
     @Test
     public void testEmbedding() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
         TrainableWordEmbedding block =
                 TrainableWordEmbedding.builder()
                         .setItems(Arrays.asList("a", "b", "c"))
@@ -236,6 +238,9 @@ public class BlockCoreTest {
             model.setBlock(block);
             model.setDataType(DataType.INT32);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(2);
                 trainer.initialize(inputShape);
@@ -258,15 +263,15 @@ public class BlockCoreTest {
 
     @Test
     public void testConv1D() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
         Block block =
                 Conv1D.builder().setKernel(new Shape(2)).setNumFilters(1).optBias(false).build();
 
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(1, 4, 4);
                 trainer.initialize(inputShape);
@@ -290,13 +295,13 @@ public class BlockCoreTest {
 
     @Test
     public void testConv2D() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
         Block block = Conv2D.builder().setKernel(new Shape(2, 2)).setNumFilters(1).build();
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(1, 1, 4, 4);
                 trainer.initialize(inputShape);
@@ -321,13 +326,13 @@ public class BlockCoreTest {
 
     @Test
     public void testConv3D() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
         Block block = Conv3D.builder().setKernel(new Shape(2, 2, 2)).setNumFilters(1).build();
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(1, 1, 3, 3, 3);
                 trainer.initialize(inputShape);
@@ -359,11 +364,7 @@ public class BlockCoreTest {
 
     @Test
     public void testRNNTanh() throws IOException, MalformedModelException {
-        Loss loss = new SoftmaxCrossEntropyLoss("SmCeLoss", 1, -1, false, true);
-        TrainingConfig config =
-                new DefaultTrainingConfig(loss)
-                        .optInitializer(Initializer.ONES)
-                        .optDevices(TestUtils.getDevices());
+        Device[] devices = TestUtils.getDevices();
         Block block =
                 RNN.builder()
                         .setStateSize(4)
@@ -371,8 +372,15 @@ public class BlockCoreTest {
                         .setActivation(RNN.Activation.TANH)
                         .optStateOutput(true)
                         .build();
-        try (Model model = Model.newInstance("model", config.getDevices()[0])) {
+        try (Model model = Model.newInstance("model", devices[0])) {
             model.setBlock(block);
+            Loss loss =
+                    new SoftmaxCrossEntropyLoss(
+                            model.getNDManager(), "SmCeLoss", 1, -1, false, true);
+            TrainingConfig config =
+                    new DefaultTrainingConfig(loss)
+                            .optInitializer(Initializer.ONES)
+                            .optDevices(devices);
 
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(1, 2, 4);
@@ -397,11 +405,7 @@ public class BlockCoreTest {
 
     @Test
     public void testRNNRelu() throws IOException, MalformedModelException {
-        Loss loss = new SoftmaxCrossEntropyLoss("SmCeLoss", 1, -1, false, true);
-        TrainingConfig config =
-                new DefaultTrainingConfig(loss)
-                        .optInitializer(Initializer.ONES)
-                        .optDevices(TestUtils.getDevices());
+        Device[] devices = TestUtils.getDevices();
         Block block =
                 RNN.builder()
                         .setStateSize(4)
@@ -409,9 +413,15 @@ public class BlockCoreTest {
                         .setActivation(RNN.Activation.RELU)
                         .optStateOutput(true)
                         .build();
-        try (Model model = Model.newInstance("model", config.getDevices()[0])) {
+        try (Model model = Model.newInstance("model", devices[0])) {
             model.setBlock(block);
-
+            Loss loss =
+                    new SoftmaxCrossEntropyLoss(
+                            model.getNDManager(), "SmCeLoss", 1, -1, false, true);
+            TrainingConfig config =
+                    new DefaultTrainingConfig(loss)
+                            .optInitializer(Initializer.ONES)
+                            .optDevices(devices);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(1, 2, 4);
                 Engine.getInstance().setRandomSeed(1234);
@@ -436,16 +446,18 @@ public class BlockCoreTest {
 
     @Test
     public void testLstm() throws IOException, MalformedModelException {
-        Loss loss = new SoftmaxCrossEntropyLoss("SmCeLoss", 1, -1, false, true);
-        TrainingConfig config =
-                new DefaultTrainingConfig(loss)
-                        .optInitializer(Initializer.ONES)
-                        .optDevices(TestUtils.getDevices());
+        Device[] devices = TestUtils.getDevices();
         Block block =
                 LSTM.builder().setStateSize(4).setNumStackedLayers(1).optStateOutput(true).build();
-        try (Model model = Model.newInstance("model", config.getDevices()[0])) {
+        try (Model model = Model.newInstance("model", devices[0])) {
             model.setBlock(block);
-
+            Loss loss =
+                    new SoftmaxCrossEntropyLoss(
+                            model.getNDManager(), "SmCeLoss", 1, -1, false, true);
+            TrainingConfig config =
+                    new DefaultTrainingConfig(loss)
+                            .optInitializer(Initializer.ONES)
+                            .optDevices(devices);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(1, 2, 4);
                 Engine.getInstance().setRandomSeed(1234);
@@ -474,16 +486,18 @@ public class BlockCoreTest {
 
     @Test
     public void testGRU() throws IOException, MalformedModelException {
-
-        Loss loss = new SoftmaxCrossEntropyLoss("SmCeLoss", 1, -1, false, true);
-        TrainingConfig config =
-                new DefaultTrainingConfig(loss)
-                        .optInitializer(Initializer.ONES)
-                        .optDevices(TestUtils.getDevices());
+        Device[] devices = TestUtils.getDevices();
         GRU block = GRU.builder().setStateSize(4).setNumStackedLayers(1).build();
-        try (Model model = Model.newInstance("model", config.getDevices()[0])) {
+        try (Model model = Model.newInstance("model", devices[0])) {
             model.setBlock(block);
 
+            Loss loss =
+                    new SoftmaxCrossEntropyLoss(
+                            model.getNDManager(), "SmCeLoss", 1, -1, false, true);
+            TrainingConfig config =
+                    new DefaultTrainingConfig(loss)
+                            .optInitializer(Initializer.ONES)
+                            .optDevices(devices);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(1, 2, 4);
                 Engine.getInstance().setRandomSeed(1234);
@@ -518,8 +532,6 @@ public class BlockCoreTest {
 
     @Test
     public void testSequentialBlock() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
         SequentialBlock block = new SequentialBlock();
         block.add(x -> new NDList(x.singletonOrThrow().mul(6.5f)));
         block.add(Linear.builder().setOutChannels(10).build());
@@ -542,6 +554,9 @@ public class BlockCoreTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(1, 3);
                 trainer.initialize(inputShape);
@@ -558,8 +573,6 @@ public class BlockCoreTest {
 
     @Test
     public void testParallelBlock() throws IOException, MalformedModelException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
         ParallelBlock block =
                 new ParallelBlock(
                         list ->
@@ -578,6 +591,9 @@ public class BlockCoreTest {
         try (Model model = Model.newInstance("model")) {
             model.setBlock(block);
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 Shape inputShape = new Shape(1, 3);
                 trainer.initialize(inputShape);

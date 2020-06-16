@@ -43,10 +43,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class DatasetTest {
-
-    private TrainingConfig config =
-            new DefaultTrainingConfig(Loss.l2Loss()).optInitializer(Initializer.ONES);
-
     @Test
     public void testSequenceSampler() {
         try (Model model = Model.newInstance("model")) {
@@ -54,6 +50,9 @@ public class DatasetTest {
 
             NDManager manager = model.getNDManager();
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(manager))
+                            .optInitializer(Initializer.ONES);
             ArrayDataset dataset =
                     new ArrayDataset.Builder()
                             .setData(
@@ -83,6 +82,9 @@ public class DatasetTest {
 
             NDManager manager = model.getNDManager();
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(manager))
+                            .optInitializer(Initializer.ONES);
             ArrayDataset dataset =
                     new ArrayDataset.Builder()
                             .setData(
@@ -110,6 +112,9 @@ public class DatasetTest {
 
             NDManager manager = model.getNDManager();
 
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(manager))
+                            .optInitializer(Initializer.ONES);
             NDArray data = manager.arange(0, 100, 1, DataType.INT64, Device.defaultDevice());
 
             ArrayDataset dataset =
@@ -192,6 +197,9 @@ public class DatasetTest {
             model.setBlock(Blocks.identityBlock());
 
             NDManager manager = model.getNDManager();
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(manager))
+                            .optInitializer(Initializer.ONES);
             // single case: one data, one label
             NDArray data = manager.arange(200).reshape(100, 2);
             NDArray label = manager.arange(100).reshape(100);
@@ -283,6 +291,9 @@ public class DatasetTest {
                             .build();
 
             cifar10.prepare();
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.l2Loss(manager))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 for (Batch batch : trainer.iterateDataset(cifar10)) {
                     batch.close();

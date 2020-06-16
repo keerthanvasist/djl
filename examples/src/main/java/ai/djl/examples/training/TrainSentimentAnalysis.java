@@ -105,13 +105,24 @@ public final class TrainSentimentAnalysis {
                     modelZooTextEmbedding
                             .preprocessTextToEmbed(Collections.singletonList("<unk>"))[0];
             StanfordMovieReview trainingSet =
-                    getDataset(embedding, Dataset.Usage.TRAIN, executorService, arguments);
+                    getDataset(
+                            model.getNDManager(),
+                            embedding,
+                            Dataset.Usage.TRAIN,
+                            executorService,
+                            arguments);
             StanfordMovieReview validateSet =
-                    getDataset(embedding, Dataset.Usage.TEST, executorService, arguments);
+                    getDataset(
+                            model.getNDManager(),
+                            embedding,
+                            Dataset.Usage.TEST,
+                            executorService,
+                            arguments);
             model.setBlock(getModel());
 
             // setup training configuration
-            DefaultTrainingConfig config = setupTrainingConfig(arguments, modelZooTextEmbedding);
+            DefaultTrainingConfig config =
+                    setupTrainingConfig(arguments, modelZooTextEmbedding, model.getNDManager());
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.setMetrics(new Metrics());
                 Shape encoderInputShape = new Shape(arguments.getBatchSize(), 10, 50);
@@ -165,7 +176,7 @@ public final class TrainSentimentAnalysis {
     }
 
     public static DefaultTrainingConfig setupTrainingConfig(
-            Arguments arguments, ModelZooTextEmbedding embedding) {
+            Arguments arguments, ModelZooTextEmbedding embedding, NDManager manager) {
         String outputDir = arguments.getOutputDir();
         CheckpointsTrainingListener listener = new CheckpointsTrainingListener(outputDir);
         listener.setSaveModelCallback(
@@ -175,7 +186,7 @@ public final class TrainSentimentAnalysis {
                     model.setProperty("Loss", String.format("%.5f", result.getValidateLoss()));
                 });
 
-        return new DefaultTrainingConfig(new SoftmaxCrossEntropyLoss())
+        return new DefaultTrainingConfig(new SoftmaxCrossEntropyLoss(manager))
                 .optDataManager(new EmbeddingDataManager(embedding))
                 .optDevices(Device.getDevices(arguments.getMaxGpus()))
                 .addTrainingListeners(TrainingListener.Defaults.logging(outputDir))
@@ -183,6 +194,7 @@ public final class TrainSentimentAnalysis {
     }
 
     public static StanfordMovieReview getDataset(
+            NDManager manager,
             Model embeddingModel,
             Dataset.Usage usage,
             ExecutorService executorService,
@@ -190,6 +202,7 @@ public final class TrainSentimentAnalysis {
             throws IOException {
         StanfordMovieReview stanfordMovieReview =
                 StanfordMovieReview.builder()
+                        .setManager(manager)
                         .setSampling(new FixedBucketSampler(arguments.getBatchSize()))
                         .optDataBatchifier(
                                 PaddingStackBatchifier.builder()

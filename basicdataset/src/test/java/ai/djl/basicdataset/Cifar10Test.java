@@ -30,12 +30,12 @@ public class Cifar10Test {
 
     @Test
     public void testCifar10Local() throws IOException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
-
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Blocks.identityBlock());
+
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             int batchSize = config.getDevices().length * 32;
 
             Repository repository = Repository.newInstance("test", "src/test/resources/mlrepo");
@@ -46,7 +46,6 @@ public class Cifar10Test {
                             .optRepository(repository)
                             .setSampling(batchSize, true)
                             .build();
-
             cifar10.prepare();
             try (Trainer trainer = model.newTrainer(config)) {
                 for (Batch batch : trainer.iterateDataset(cifar10)) {
@@ -60,10 +59,6 @@ public class Cifar10Test {
 
     @Test
     public void testCifar10Remote() throws IOException {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
-
         try (Model model = Model.newInstance("model")) {
             model.setBlock(Blocks.identityBlock());
 
@@ -75,6 +70,10 @@ public class Cifar10Test {
                             .build();
 
             cifar10.prepare();
+
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 for (Batch batch : trainer.iterateDataset(cifar10)) {
                     Assert.assertEquals(batch.getData().size(), 1);

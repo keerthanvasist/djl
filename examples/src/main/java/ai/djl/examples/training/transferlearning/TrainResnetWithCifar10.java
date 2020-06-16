@@ -30,6 +30,7 @@ import ai.djl.modality.cv.transform.Normalize;
 import ai.djl.modality.cv.transform.ToTensor;
 import ai.djl.modality.cv.translator.ImageClassificationTranslator;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Block;
 import ai.djl.nn.Blocks;
@@ -89,7 +90,7 @@ public final class TrainResnetWithCifar10 {
             RandomAccessDataset validationDataset = getDataset(Dataset.Usage.TEST, arguments);
 
             // setup training configuration
-            DefaultTrainingConfig config = setupTrainingConfig(arguments);
+            DefaultTrainingConfig config = setupTrainingConfig(arguments, model.getNDManager());
 
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.setMetrics(new Metrics());
@@ -211,9 +212,10 @@ public final class TrainResnetWithCifar10 {
         }
     }
 
-    private static DefaultTrainingConfig setupTrainingConfig(Arguments arguments) {
-        return new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                .addEvaluator(new Accuracy())
+    private static DefaultTrainingConfig setupTrainingConfig(
+            Arguments arguments, NDManager manager) {
+        return new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(manager))
+                .addEvaluator(new Accuracy(manager))
                 .optDevices(Device.getDevices(arguments.getMaxGpus()))
                 .addTrainingListeners(TrainingListener.Defaults.logging(arguments.getOutputDir()));
     }

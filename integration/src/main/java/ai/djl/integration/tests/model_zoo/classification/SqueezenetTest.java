@@ -36,12 +36,12 @@ import org.testng.annotations.Test;
 public class SqueezenetTest {
     @Test
     public void testTrain() {
-        TrainingConfig config =
-                new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                        .optInitializer(Initializer.ONES);
         Block squeezeNet = SqueezeNet.squeezenet(10);
         try (Model model = Model.newInstance("squeezenet")) {
             model.setBlock(squeezeNet);
+            TrainingConfig config =
+                    new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(model.getNDManager()))
+                            .optInitializer(Initializer.ONES);
             try (Trainer trainer = model.newTrainer(config)) {
                 int batchSize = config.getDevices().length * 16;
                 Shape inputShape = new Shape(batchSize, 1, 28, 28);

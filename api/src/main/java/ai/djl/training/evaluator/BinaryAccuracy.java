@@ -14,6 +14,7 @@ package ai.djl.training.evaluator;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.util.Pair;
 
@@ -32,13 +33,14 @@ public class BinaryAccuracy extends AbstractAccuracy {
     /**
      * Creates a binary (two class) accuracy evaluator.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the evaluator, default is "Accuracy"
      * @param threshold the value differentiating the posive and negative classes (usually 0 or .5)
      * @param index the index of the NDArray in labels to compute accuracy for
      * @param axis the axis that represent classes in prediction, default 1
      */
-    public BinaryAccuracy(String name, float threshold, int index, int axis) {
-        super(name, index, axis);
+    public BinaryAccuracy(NDManager manager, String name, float threshold, int index, int axis) {
+        super(manager, name, index, axis);
         this.threshold = threshold;
     }
 
@@ -46,27 +48,33 @@ public class BinaryAccuracy extends AbstractAccuracy {
      * Creates a binary (two class) accuracy evaluator that computes accuracy across axis 1 along
      * given index.
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the evaluator, default is "Accuracy"
      * @param threshold the value differentiating the posive and negative classes (usually 0 or .5)
      * @param index the index of the NDArray in labels to compute accuracy for
      */
-    public BinaryAccuracy(String name, float threshold, int index) {
-        this(name, threshold, index, 1);
+    public BinaryAccuracy(NDManager manager, String name, float threshold, int index) {
+        this(manager, name, threshold, index, 1);
     }
 
     /**
      * Creates a binary (two class) accuracy evaluator that computes accuracy across axis 1 along
      * the 0th index.
      *
+     * @param manager an {@link NDManager}
      * @param threshold the value differentiating the posive and negative classes (usually 0 or .5)
      */
-    public BinaryAccuracy(float threshold) {
-        this("BinaryAccuracy", threshold, 0, 1);
+    public BinaryAccuracy(NDManager manager, float threshold) {
+        this(manager, "BinaryAccuracy", threshold, 0, 1);
     }
 
-    /** Creates a binary (two class) accuracy evaluator with 0 threshold. */
-    public BinaryAccuracy() {
-        this(0);
+    /**
+     * Creates a binary (two class) accuracy evaluator with 0 threshold.
+     *
+     * @param manager an {@link NDManager}
+     */
+    public BinaryAccuracy(NDManager manager) {
+        this(manager, 0);
     }
 
     /** {@inheritDoc} */

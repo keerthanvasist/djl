@@ -28,6 +28,7 @@ import ai.djl.modality.cv.transform.ToTensor;
 import ai.djl.modality.cv.translator.SingleShotDetectionTranslator;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Block;
 import ai.djl.nn.LambdaBlock;
@@ -80,7 +81,7 @@ public final class TrainPikachu {
             RandomAccessDataset trainingSet = getDataset(Dataset.Usage.TRAIN, arguments);
             RandomAccessDataset validateSet = getDataset(Dataset.Usage.TEST, arguments);
 
-            DefaultTrainingConfig config = setupTrainingConfig(arguments);
+            DefaultTrainingConfig config = setupTrainingConfig(arguments, model.getNDManager());
 
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.setMetrics(new Metrics());
@@ -139,7 +140,8 @@ public final class TrainPikachu {
         return pikachuDetection;
     }
 
-    private static DefaultTrainingConfig setupTrainingConfig(Arguments arguments) {
+    private static DefaultTrainingConfig setupTrainingConfig(
+            Arguments arguments, NDManager manager) {
         String outputDir = arguments.getOutputDir();
         CheckpointsTrainingListener listener = new CheckpointsTrainingListener(outputDir);
         listener.setSaveModelCallback(
@@ -151,9 +153,9 @@ public final class TrainPikachu {
                     model.setProperty("Loss", String.format("%.5f", result.getValidateLoss()));
                 });
 
-        return new DefaultTrainingConfig(new SingleShotDetectionLoss())
-                .addEvaluator(new SingleShotDetectionAccuracy("classAccuracy"))
-                .addEvaluator(new BoundingBoxError("boundingBoxError"))
+        return new DefaultTrainingConfig(new SingleShotDetectionLoss(manager))
+                .addEvaluator(new SingleShotDetectionAccuracy(manager, "classAccuracy"))
+                .addEvaluator(new BoundingBoxError(manager, "boundingBoxError"))
                 .optDevices(Device.getDevices(arguments.getMaxGpus()))
                 .addTrainingListeners(TrainingListener.Defaults.logging(outputDir))
                 .addTrainingListeners(listener);

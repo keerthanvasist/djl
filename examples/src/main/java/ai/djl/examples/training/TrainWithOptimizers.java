@@ -25,6 +25,7 @@ import ai.djl.modality.cv.Image;
 import ai.djl.modality.cv.transform.Normalize;
 import ai.djl.modality.cv.transform.ToTensor;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Block;
 import ai.djl.nn.Blocks;
@@ -81,7 +82,7 @@ public final class TrainWithOptimizers {
             RandomAccessDataset validationDataset = getDataset(Dataset.Usage.TEST, arguments);
 
             // setup training configuration
-            DefaultTrainingConfig config = setupTrainingConfig(arguments);
+            DefaultTrainingConfig config = setupTrainingConfig(arguments, model.getNDManager());
 
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.setMetrics(new Metrics());
@@ -161,7 +162,8 @@ public final class TrainWithOptimizers {
         }
     }
 
-    private static DefaultTrainingConfig setupTrainingConfig(OptimizerArguments arguments) {
+    private static DefaultTrainingConfig setupTrainingConfig(
+            OptimizerArguments arguments, NDManager manager) {
         String outputDir = arguments.getOutputDir();
         CheckpointsTrainingListener listener =
                 new CheckpointsTrainingListener(outputDir, "resnetv1");
@@ -174,8 +176,8 @@ public final class TrainWithOptimizers {
                     model.setProperty("Loss", String.format("%.5f", result.getValidateLoss()));
                 });
 
-        return new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                .addEvaluator(new Accuracy())
+        return new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(manager))
+                .addEvaluator(new Accuracy(manager))
                 .optOptimizer(setupOptimizer(arguments))
                 .optDevices(Device.getDevices(arguments.getMaxGpus()))
                 .addTrainingListeners(TrainingListener.Defaults.logging(outputDir))

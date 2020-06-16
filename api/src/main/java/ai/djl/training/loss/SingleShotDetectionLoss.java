@@ -15,6 +15,7 @@ package ai.djl.training.loss;
 import ai.djl.modality.cv.MultiBoxTarget;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.util.Pair;
 import java.util.Arrays;
 
@@ -28,12 +29,17 @@ public class SingleShotDetectionLoss extends AbstractCompositeLoss {
 
     private MultiBoxTarget multiBoxTarget = MultiBoxTarget.builder().build();
 
-    /** Base class for metric with abstract update methods. */
-    public SingleShotDetectionLoss() {
-        super("SingleShotDetectionLoss");
+    /**
+     * Base class for metric with abstract update methods.
+     *
+     * @param manager an {@link NDManager}
+     */
+    public SingleShotDetectionLoss(NDManager manager) {
+        super(manager, "SingleShotDetectionLoss");
         components =
                 Arrays.asList(
-                        Loss.softmaxCrossEntropyLoss("ClassLoss"), Loss.l1Loss("BoundingBoxLoss"));
+                        Loss.softmaxCrossEntropyLoss(manager, "ClassLoss"),
+                        Loss.l1Loss(manager, "BoundingBoxLoss"));
     }
 
     /**

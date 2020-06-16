@@ -27,6 +27,7 @@ import ai.djl.modality.cv.output.DetectedObjects;
 import ai.djl.modality.cv.transform.ToTensor;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Block;
 import ai.djl.nn.LambdaBlock;
@@ -77,7 +78,7 @@ public class SingleShotDetectionTest {
     public void testLoadTrain()
             throws IOException, ModelNotFoundException, MalformedModelException {
         try (ZooModel<Image, DetectedObjects> model = getModel()) {
-            TrainingConfig config = setupTrainingConfig();
+            TrainingConfig config = setupTrainingConfig(model.getNDManager());
             try (Trainer trainer = model.newTrainer(config)) {
                 Dataset dataset = getDataset();
 
@@ -123,10 +124,10 @@ public class SingleShotDetectionTest {
         return pikachuDetection;
     }
 
-    private TrainingConfig setupTrainingConfig() {
-        return new DefaultTrainingConfig(new SingleShotDetectionLoss())
-                .addEvaluator(new SingleShotDetectionAccuracy("classAccuracy"))
-                .addEvaluator(new BoundingBoxError("boundingBoxError"))
+    private TrainingConfig setupTrainingConfig(NDManager manager) {
+        return new DefaultTrainingConfig(new SingleShotDetectionLoss(manager))
+                .addEvaluator(new SingleShotDetectionAccuracy(manager, "classAccuracy"))
+                .addEvaluator(new BoundingBoxError(manager, "boundingBoxError"))
                 .optDevices(Device.getDevices(1));
     }
 

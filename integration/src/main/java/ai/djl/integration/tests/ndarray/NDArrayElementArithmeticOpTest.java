@@ -138,7 +138,7 @@ public class NDArrayElementArithmeticOpTest {
             NDArray result;
             try (Trainer trainer =
                     model.newTrainer(
-                            new DefaultTrainingConfig(Loss.l2Loss())
+                            new DefaultTrainingConfig(Loss.l2Loss(manager))
                                     .optInitializer(Initializer.ONES))) {
                 try (GradientCollector gradCol = trainer.newGradientCollector()) {
                     lhs.attachGradient();
@@ -359,7 +359,7 @@ public class NDArrayElementArithmeticOpTest {
             // test 2D * 2D
             try (Trainer trainer =
                     model.newTrainer(
-                            new DefaultTrainingConfig(Loss.l2Loss())
+                            new DefaultTrainingConfig(Loss.l2Loss(manager))
                                     .optInitializer(Initializer.ONES))) {
                 try (GradientCollector gradCol = trainer.newGradientCollector()) {
                     lhs.attachGradient();

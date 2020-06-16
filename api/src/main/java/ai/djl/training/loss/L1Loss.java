@@ -15,6 +15,7 @@ package ai.djl.training.loss;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 
 /**
  * {@code L1Loss} calculates L1 loss between label and prediction.
@@ -25,28 +26,34 @@ public class L1Loss extends Loss {
 
     private float weight;
 
-    /** Calculates L1 Loss between the label and prediction, a.k.a. MAE(Mean Absolute Error). */
-    public L1Loss() {
-        this("L1Loss");
+    /**
+     * Calculates L1 Loss between the label and prediction, a.k.a. MAE(Mean Absolute Error).
+     *
+     * @param manager an {@link NDManager}
+     */
+    public L1Loss(NDManager manager) {
+        this(manager, "L1Loss");
     }
 
     /**
      * Calculates L1 Loss between the label and prediction, a.k.a. MAE(Mean Absolute Error).
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      */
-    public L1Loss(String name) {
-        this(name, 1);
+    public L1Loss(NDManager manager, String name) {
+        this(manager, name, 1);
     }
 
     /**
      * Calculates L1 Loss between the label and prediction, a.k.a. MAE(Mean Absolute Error).
      *
+     * @param manager an {@link NDManager}
      * @param name the name of the loss
      * @param weight the weight to apply on loss value, default 1
      */
-    public L1Loss(String name, float weight) {
-        super(name);
+    public L1Loss(NDManager manager, String name, float weight) {
+        super(manager, name);
         this.weight = weight;
     }
 

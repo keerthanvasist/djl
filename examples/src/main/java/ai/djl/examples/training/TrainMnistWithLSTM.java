@@ -18,6 +18,7 @@ import ai.djl.basicdataset.Mnist;
 import ai.djl.examples.training.util.Arguments;
 import ai.djl.metric.Metrics;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Block;
 import ai.djl.nn.SequentialBlock;
@@ -60,7 +61,7 @@ public final class TrainMnistWithLSTM {
             RandomAccessDataset validateSet = getDataset(Dataset.Usage.TEST, arguments);
 
             // setup training configuration
-            DefaultTrainingConfig config = setupTrainingConfig(arguments);
+            DefaultTrainingConfig config = setupTrainingConfig(arguments, model.getNDManager());
 
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.setMetrics(new Metrics());
@@ -90,7 +91,8 @@ public final class TrainMnistWithLSTM {
         return block;
     }
 
-    public static DefaultTrainingConfig setupTrainingConfig(Arguments arguments) {
+    public static DefaultTrainingConfig setupTrainingConfig(
+            Arguments arguments, NDManager manager) {
         String outputDir = arguments.getOutputDir();
         CheckpointsTrainingListener listener = new CheckpointsTrainingListener(outputDir);
         listener.setSaveModelCallback(
@@ -102,8 +104,8 @@ public final class TrainMnistWithLSTM {
                     model.setProperty("Loss", String.format("%.5f", result.getValidateLoss()));
                 });
 
-        return new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss())
-                .addEvaluator(new Accuracy())
+        return new DefaultTrainingConfig(Loss.softmaxCrossEntropyLoss(manager))
+                .addEvaluator(new Accuracy(manager))
                 .optInitializer(new XavierInitializer())
                 .optDataManager(new MnistWithLSTMDataManager())
                 .optDevices(Device.getDevices(arguments.getMaxGpus()))

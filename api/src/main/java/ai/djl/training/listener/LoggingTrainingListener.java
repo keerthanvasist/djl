@@ -90,16 +90,9 @@ public class LoggingTrainingListener implements TrainingListener {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append(
-                getEvaluatorsStatus(
-                        metrics,
-                        trainer.getEvaluators(),
-                        EvaluatorTrainingListener.TRAIN_PROGRESS,
-                        2));
-
         if (metrics.hasMetric("train")) {
             float batchTime = metrics.latestMetric("train").getValue().longValue() / 1_000_000_000f;
-            sb.append(String.format(", speed: %.2f items/sec", batchSize / batchTime));
+            sb.append(String.format("speed: %.2f items/sec", batchSize / batchTime));
         }
         return sb.toString();
     }
