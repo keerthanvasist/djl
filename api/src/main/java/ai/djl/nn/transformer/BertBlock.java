@@ -283,6 +283,14 @@ public final class BertBlock extends AbstractBlock {
         return lastOutput;
     }
 
+    /**
+     * Returns a new BertBlock builder.
+     * @return a new BertBlock builder.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
     /** The Builder to construct a {@link BertBlock} type of {@link Block}. */
     public static final class Builder {
         int tokenDictionarySize;

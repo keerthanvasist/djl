@@ -12,8 +12,10 @@
  */
 package ai.djl.nn.transformer;
 
+import ai.djl.ndarray.LazyNDArray;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.training.loss.Loss;
 
@@ -39,15 +41,16 @@ public class BertNextSentenceLoss extends Loss {
     @Override
     public NDArray evaluate(final NDList labels, final NDList predictions) {
         MemoryScope scope = MemoryScope.from(labels).add(predictions);
-        NDArray label = labels.get(labelIdx);
+        NDArray label = labels.get(labelIdx).toType(DataType.FLOAT32, false);
         // predictions are log(softmax)
         NDArray logPredictions = predictions.get(nextSentencePredictionIdx);
-        NDArray oneHotLabels = MissingOps.oneHot(2, label);
+        NDArray oneHotLabels = MissingOps.oneHot(2, label).toType(DataType.FLOAT32, false);
         // we use negative log likelihood as loss: log(softmax) turns high confidence into
         // negative values near one, low confidence into negative values near -inf,
         // negating gives almost 0 for high confidence and near +inf for very low confidence
-        NDArray perExampleLoss =
-                oneHotLabels.mul(oneHotLabels.mul(logPredictions)).sum(new int[] {1}).mul(-1);
+        NDArray logPredictionForLabels = oneHotLabels.mul(logPredictions);
+        NDArray summedPredictions = logPredictionForLabels.sum(new int[] {1});
+        NDArray perExampleLoss = summedPredictions.mul(-1f);
         NDArray result = perExampleLoss.mean();
         scope.remove(labels, predictions).waitToRead(result).close();
         return result;

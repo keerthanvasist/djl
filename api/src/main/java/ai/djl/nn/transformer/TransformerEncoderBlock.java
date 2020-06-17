@@ -68,7 +68,7 @@ public class TransformerEncoderBlock extends AbstractBlock {
                                 .optAttentionProbsDropoutProb(dropoutProbability)
                                 .build());
         this.selfAttentionDropout = Dropout.builder().optProbability(dropoutProbability).build();
-        this.attentionNorm = addChildBlock("attentionNorm", BatchNorm.builder().optAxis(1).build());
+        this.attentionNorm = addChildBlock("attentionNorm", BatchNorm.builder().optAxis(2).build());
         this.pointWisefullyConnected =
                 addChildBlock(
                         "outputBlock",
@@ -77,7 +77,7 @@ public class TransformerEncoderBlock extends AbstractBlock {
                                 embeddingSize,
                                 activationFunction));
         this.fullyConnectedDropout = Dropout.builder().optProbability(dropoutProbability).build();
-        this.outputNorm = addChildBlock("outputNorm", BatchNorm.builder().optAxis(1).build());
+        this.outputNorm = addChildBlock("outputNorm", BatchNorm.builder().optAxis(2).build());
     }
 
     @Override
@@ -105,8 +105,6 @@ public class TransformerEncoderBlock extends AbstractBlock {
     @Override
     public NDList forward(final ParameterStore ps, final NDList inputs, final boolean training) {
         final NDArray embedding = inputs.head();
-        final Shape shape = embedding.getShape();
-        final Shape flat = new Shape(shape.get(0), shape.get(1) * shape.get(2));
         // perform attention lookup
         final NDList attentionOutput = selfAttentionBlock.forward(ps, inputs, training);
         // add dropout to attention Output
@@ -116,11 +114,10 @@ public class TransformerEncoderBlock extends AbstractBlock {
         final NDArray withResidual = attentionOutputAfterDropout.singletonOrThrow().add(embedding);
         // apply normalization
         final NDList normalized =
-                attentionNorm.forward(ps, new NDList(withResidual.reshape(flat)), training);
+                attentionNorm.forward(ps, new NDList(withResidual), training);
         // apply pointwise projection
         final NDList afterFullyConnected =
-                pointWisefullyConnected.forward(
-                        ps, new NDList(normalized.head().reshape(shape)), training);
+                pointWisefullyConnected.forward(ps, normalized, training);
         // apply dropout to fully connected output
         final NDList afterFullyConnectedDropout =
                 fullyConnectedDropout.forward(ps, afterFullyConnected, training);
@@ -128,10 +125,7 @@ public class TransformerEncoderBlock extends AbstractBlock {
         final NDList outputWithResidual =
                 new NDList(afterFullyConnectedDropout.singletonOrThrow().add(embedding));
         // normalize result
-        final NDList outputNormalized =
-                outputNorm.forward(
-                        ps, new NDList(outputWithResidual.head().reshape(flat)), training);
-        // done
-        return new NDList(outputNormalized.head().reshape(shape));
+        return outputNorm.forward(
+                        ps, new NDList(outputWithResidual), training);
     }
 }

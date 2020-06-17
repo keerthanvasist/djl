@@ -45,7 +45,7 @@ public class BertMaskedLanguageModelLoss extends Loss {
         NDArray logProbs = predictions.get(logProbsIdx); // (B * I, D)
         int dictionarySize = (int) logProbs.getShape().get(1);
         NDArray targetIds = labels.get(labelIdx).flatten(); // (B * I)
-        NDArray mask = labels.get(maskIdx).flatten(); // (B * I)
+        NDArray mask = labels.get(maskIdx).flatten().toType(DataType.FLOAT32, false); // (B * I)
         NDArray targetOneHots = MissingOps.oneHot(dictionarySize, targetIds);
         // Multiplying log_probs and one_hot_labels leaves the log probabilities of the correct
         // entries.
