@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /** Simple example that performs Bert pretraining on the java source files in this repo. */
+@SuppressWarnings("PMD")
 public final class TrainBertOnCode {
 
     private static final String UNK = "<unk>";
