@@ -285,6 +285,7 @@ public final class BertBlock extends AbstractBlock {
 
     /**
      * Returns a new BertBlock builder.
+     *
      * @return a new BertBlock builder.
      */
     public static Builder builder() {

@@ -36,10 +36,20 @@ public class BertPretrainingLoss extends AbstractCompositeLoss {
         return new Pair<>(labels, predictions);
     }
 
+    /**
+     * gets BertNextSentenceLoss.
+     *
+     * @return BertNextSentenceLoss
+     */
     public BertNextSentenceLoss getBertNextSentenceLoss() {
         return bertNextSentenceLoss;
     }
 
+    /**
+     * gets BertMaskedLanguageModelLoss.
+     *
+     * @return BertMaskedLanguageModelLoss
+     */
     public BertMaskedLanguageModelLoss getBertMaskedLanguageModelLoss() {
         return bertMaskedLanguageModelLoss;
     }

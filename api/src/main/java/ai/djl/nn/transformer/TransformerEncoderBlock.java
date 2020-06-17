@@ -113,8 +113,7 @@ public class TransformerEncoderBlock extends AbstractBlock {
         // add input as residual
         final NDArray withResidual = attentionOutputAfterDropout.singletonOrThrow().add(embedding);
         // apply normalization
-        final NDList normalized =
-                attentionNorm.forward(ps, new NDList(withResidual), training);
+        final NDList normalized = attentionNorm.forward(ps, new NDList(withResidual), training);
         // apply pointwise projection
         final NDList afterFullyConnected =
                 pointWisefullyConnected.forward(ps, normalized, training);
@@ -125,7 +124,6 @@ public class TransformerEncoderBlock extends AbstractBlock {
         final NDList outputWithResidual =
                 new NDList(afterFullyConnectedDropout.singletonOrThrow().add(embedding));
         // normalize result
-        return outputNorm.forward(
-                        ps, new NDList(outputWithResidual), training);
+        return outputNorm.forward(ps, new NDList(outputWithResidual), training);
     }
 }

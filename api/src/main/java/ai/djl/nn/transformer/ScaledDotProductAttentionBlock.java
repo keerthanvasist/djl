@@ -271,7 +271,10 @@ public final class ScaledDotProductAttentionBlock extends AbstractBlock {
                         expandedMask
                                 .toType(DataType.FLOAT32, false)
                                 .mul(expandedMask.getManager().create(-1f)) // turn 1 into -1
-                                .add(expandedMask.getManager().create(1f)) // turn 0s to 1s, -1s to 0s
+                                .add(
+                                        expandedMask
+                                                .getManager()
+                                                .create(1f)) // turn 0s to 1s, -1s to 0s
                                 .mul(
                                         expandedMask
                                                 .getManager()

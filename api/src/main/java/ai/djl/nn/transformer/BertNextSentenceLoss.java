@@ -12,10 +12,8 @@
  */
 package ai.djl.nn.transformer;
 
-import ai.djl.ndarray.LazyNDArray;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
-import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.training.loss.Loss;
 

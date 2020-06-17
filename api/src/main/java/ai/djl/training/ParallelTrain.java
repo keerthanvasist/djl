@@ -60,9 +60,9 @@ public final class ParallelTrain {
                     executor.submit(
                             () -> {
                                 try (GradientCollector collector = trainer.newGradientCollector()) {
-                                    NDList data = trainer.getDataManager().getData(split);
-                                    NDList labels = trainer.getDataManager().getLabels(split);
-                                    NDList preds = trainer.forward(data);
+                                    NDList data = split.getData();
+                                    NDList labels = split.getLabels();
+                                    NDList preds = trainer.forward(data, labels);
                                     long time = System.nanoTime();
                                     NDArray lossValue = trainer.getLoss().evaluate(labels, preds);
                                     collector.backward(lossValue);
