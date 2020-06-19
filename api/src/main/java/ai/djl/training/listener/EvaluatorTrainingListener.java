@@ -82,7 +82,9 @@ public class EvaluatorTrainingListener implements TrainingListener {
     /** {@inheritDoc} */
     @Override
     public void onTrainingBatch(Trainer trainer, BatchData batchData) {
+        //long start = System.nanoTime();
         updateEvaluators(trainer, batchData, new String[] {TRAIN_EPOCH});
+        //System.out.println("Update time=" + (System.nanoTime() - start));
     }
 
     /** {@inheritDoc} */
@@ -105,7 +107,9 @@ public class EvaluatorTrainingListener implements TrainingListener {
                 NDList labels = batchData.getLabels().get(device);
                 NDList predictions = batchData.getPredictions().get(device);
                 for (String accumulator : accumulators) {
+                    //long start = System.nanoTime();
                     evaluator.updateAccumulator(accumulator, labels, predictions);
+                    //System.out.print(" Evaliuator=" + evaluator.getName() + " time=" + (System.nanoTime() - start) );
                 }
             }
         }

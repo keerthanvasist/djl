@@ -42,7 +42,6 @@ import ai.djl.training.Trainer;
 import ai.djl.training.TrainingConfig;
 import ai.djl.training.dataset.Batch;
 import ai.djl.training.dataset.Dataset;
-import ai.djl.training.evaluator.BoundingBoxError;
 import ai.djl.training.evaluator.SingleShotDetectionAccuracy;
 import ai.djl.training.loss.SingleShotDetectionLoss;
 import ai.djl.training.util.ProgressBar;
@@ -127,7 +126,6 @@ public class SingleShotDetectionTest {
     private TrainingConfig setupTrainingConfig(NDManager manager) {
         return new DefaultTrainingConfig(new SingleShotDetectionLoss(manager))
                 .addEvaluator(new SingleShotDetectionAccuracy(manager, "classAccuracy"))
-                .addEvaluator(new BoundingBoxError(manager, "boundingBoxError"))
                 .optDevices(Device.getDevices(1));
     }
 
