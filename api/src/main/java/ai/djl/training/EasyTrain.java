@@ -17,6 +17,9 @@ import ai.djl.ndarray.NDList;
 import ai.djl.training.dataset.Batch;
 import ai.djl.training.dataset.Dataset;
 import ai.djl.training.listener.TrainingListener.BatchData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Helper for easy training of a whole model, a trainining batch, or a validation batch. */
@@ -34,13 +37,30 @@ public final class EasyTrain {
      */
     public static void fit(
             Trainer trainer, int numEpoch, Dataset trainingDataset, Dataset validateDataset) {
+        long averageStep = 0;
+        long averageTrain = 0;
+        long averageBatchLoad = 0;
+        long averageBatchClose = 0;
+        long averageListener = 0;
+        long start = System.nanoTime();
+        Logger logger = LoggerFactory.getLogger(EasyTrain.class);
+        long i = 0;
         for (int epoch = 0; epoch < numEpoch; epoch++) {
             for (Batch batch : trainer.iterateDataset(trainingDataset)) {
+                averageBatchLoad = (averageBatchLoad * i + (System.nanoTime() - start)) / (i + 1);
+                start = System.nanoTime();
                 trainBatch(trainer, batch);
+                averageTrain = (averageTrain * i + (System.nanoTime() - start)) / (i + 1);
+                start = System.nanoTime();
                 trainer.step();
+                averageStep = (averageStep * i + (System.nanoTime() - start)) / (i + 1);
+                start = System.nanoTime();
                 batch.close();
+                averageBatchClose = (averageBatchClose * i + (System.nanoTime() - start)) / (i + 1);
+                start = System.nanoTime();
             }
 
+            validateDataset = null;
             if (validateDataset != null) {
                 for (Batch batch : trainer.iterateDataset(validateDataset)) {
                     validateBatch(trainer, batch);
@@ -49,6 +69,12 @@ public final class EasyTrain {
             }
             // reset training and validation evaluators at end of epoch
             trainer.notifyListeners(listener -> listener.onEpoch(trainer));
+            averageListener = (averageListener * i + (System.nanoTime() - start)) / (i + 1);
+            logger.info("Averages: load={}, train={}, step={}, close={} listener={}",
+                    averageBatchLoad, averageTrain, averageStep, averageBatchClose,
+                    averageListener);
+            start = System.nanoTime();
+
         }
     }
 
