@@ -24,7 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Helper for easy training of a whole model, a trainining batch, or a validation batch. */
 public final class EasyTrain {
-
+    private static Logger logger = LoggerFactory.getLogger(EasyTrain.class);
+    private static long averagebatchListener = 0;
+    private static long j = 0;
     private EasyTrain() {}
 
     /**
@@ -43,7 +45,6 @@ public final class EasyTrain {
         long averageBatchClose = 0;
         long averageListener = 0;
         long start = System.nanoTime();
-        Logger logger = LoggerFactory.getLogger(EasyTrain.class);
         long i = 0;
         for (int epoch = 0; epoch < numEpoch; epoch++) {
             for (Batch batch : trainer.iterateDataset(trainingDataset)) {
@@ -58,6 +59,7 @@ public final class EasyTrain {
                 batch.close();
                 averageBatchClose = (averageBatchClose * i + (System.nanoTime() - start)) / (i + 1);
                 start = System.nanoTime();
+                i++;
             }
 
             validateDataset = null;
@@ -69,9 +71,9 @@ public final class EasyTrain {
             }
             // reset training and validation evaluators at end of epoch
             trainer.notifyListeners(listener -> listener.onEpoch(trainer));
-            averageListener = (averageListener * i + (System.nanoTime() - start)) / (i + 1);
-            logger.info("Averages: load={}, train={}, step={}, close={} listener={}",
-                    averageBatchLoad, averageTrain, averageStep, averageBatchClose,
+            averageListener = (averageListener * epoch + (System.nanoTime() - start)) / (epoch + 1);
+            logger.info("Averages: load={}, train={}, batch_listener={}, step={}, close={} listener={}",
+                    averageBatchLoad, averageTrain, averagebatchListener, averageStep, averageBatchClose,
                     averageListener);
             start = System.nanoTime();
 
@@ -108,8 +110,10 @@ public final class EasyTrain {
                 trainer.addMetric("training-metrics", time);
             }
         }
-
+        long start = System.nanoTime();
         trainer.notifyListeners(listener -> listener.onTrainingBatch(trainer, batchData));
+        averagebatchListener = (averagebatchListener * j + (System.nanoTime() - start)) / (j + 1);
+        j++;
     }
 
     /**
