@@ -20,12 +20,13 @@ import ai.djl.training.listener.TrainingListener.BatchData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Helper for easy training of a whole model, a trainining batch, or a validation batch. */
 public final class EasyTrain {
-
+    private static Logger logger = LoggerFactory.getLogger(EasyTrain.class);
+    private static long averagebatchListener = 0;
+    private static long j = 0;
     private EasyTrain() {}
 
     /**
@@ -44,7 +45,6 @@ public final class EasyTrain {
         long averageBatchClose = 0;
         long averageListener = 0;
         long start = System.nanoTime();
-        Logger logger = LoggerFactory.getLogger(EasyTrain.class);
         long i = 0;
         for (int epoch = 0; epoch < numEpoch; epoch++) {
             for (Batch batch : trainer.iterateDataset(trainingDataset)) {
@@ -59,6 +59,7 @@ public final class EasyTrain {
                 batch.close();
                 averageBatchClose = (averageBatchClose * i + (System.nanoTime() - start)) / (i + 1);
                 start = System.nanoTime();
+                i++;
             }
 
             validateDataset = null;
@@ -70,9 +71,9 @@ public final class EasyTrain {
             }
             // reset training and validation evaluators at end of epoch
             trainer.notifyListeners(listener -> listener.onEpoch(trainer));
-            averageListener = (averageListener * i + (System.nanoTime() - start)) / (i + 1);
-            logger.info("Averages: load={}, train={}, step={}, close={} listener={}",
-                    averageBatchLoad, averageTrain, averageStep, averageBatchClose,
+            averageListener = (averageListener * epoch + (System.nanoTime() - start)) / (epoch + 1);
+            logger.info("Averages: load={}, train={}, batch_listener={}, step={}, close={} listener={}",
+                    averageBatchLoad, averageTrain, averagebatchListener, averageStep, averageBatchClose,
                     averageListener);
             start = System.nanoTime();
 
@@ -94,25 +95,25 @@ public final class EasyTrain {
         Batch[] splits = batch.split(trainer.getDevices(), false);
         BatchData batchData =
                 new BatchData(batch, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
-        Arrays.stream(splits)
-                .parallel()
-                .forEach(
-                        split -> {
-                            try (GradientCollector collector = trainer.newGradientCollector()) {
-                                NDList data = trainer.getDataManager().getData(split);
-                                NDList labels = trainer.getDataManager().getLabels(split);
-                                NDList preds = trainer.forward(data);
-                                long time = System.nanoTime();
-                                NDArray lossValue = trainer.getLoss().evaluate(labels, preds);
-                                collector.backward(lossValue);
-                                trainer.addMetric("backward", time);
-                                time = System.nanoTime();
-                                batchData.getLabels().put(labels.get(0).getDevice(), labels);
-                                batchData.getPredictions().put(preds.get(0).getDevice(), preds);
-                                trainer.addMetric("training-metrics", time);
-                            }
-                        });
+        try (GradientCollector collector = trainer.newGradientCollector()) {
+            for (Batch split : splits) {
+                NDList data = trainer.getDataManager().getData(split);
+                NDList labels = trainer.getDataManager().getLabels(split);
+                NDList preds = trainer.forward(data);
+                long time = System.nanoTime();
+                NDArray lossValue = trainer.getLoss().evaluate(labels, preds);
+                collector.backward(lossValue);
+                trainer.addMetric("backward", time);
+                time = System.nanoTime();
+                batchData.getLabels().put(labels.get(0).getDevice(), labels);
+                batchData.getPredictions().put(preds.get(0).getDevice(), preds);
+                trainer.addMetric("training-metrics", time);
+            }
+        }
+        long start = System.nanoTime();
         trainer.notifyListeners(listener -> listener.onTrainingBatch(trainer, batchData));
+        averagebatchListener = (averagebatchListener * j + (System.nanoTime() - start)) / (j + 1);
+        j++;
     }
 
     /**
