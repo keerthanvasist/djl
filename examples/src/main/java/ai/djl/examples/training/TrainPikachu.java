@@ -155,7 +155,6 @@ public final class TrainPikachu {
 
         return new DefaultTrainingConfig(new SingleShotDetectionLoss(manager))
                 .addEvaluator(new SingleShotDetectionAccuracy(manager, "classAccuracy"))
-                .addEvaluator(new BoundingBoxError(manager, "boundingBoxError"))
                 .optDevices(Device.getDevices(arguments.getMaxGpus()))
                 .addTrainingListeners(TrainingListener.Defaults.logging(outputDir))
                 .addTrainingListeners(listener);
